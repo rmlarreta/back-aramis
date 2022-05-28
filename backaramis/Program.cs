@@ -3,6 +3,7 @@ using backaramis.Helpers;
 using backaramis.Interfaces;
 using backaramis.Models;
 using backaramis.Services;
+using backmaree.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -71,7 +72,8 @@ builder.Services.AddAuthentication(x =>
 builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
 builder.Services.AddScoped<ILoggService, LoggService>();
 builder.Services.AddScoped<IStoreProcedure, StoreProcedure>();
-builder.Services.AddScoped<IUserService, UserService>(); 
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<SecurityService>();
 
 builder.Services.AddHttpContextAccessor();

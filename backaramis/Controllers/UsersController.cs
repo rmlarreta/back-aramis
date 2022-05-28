@@ -226,6 +226,7 @@ namespace backaramis.Controllers
                 return BadRequest(new { message = ex.InnerException is not null ? ex.InnerException.Message : ex.Message });
             }
         }
+       
         #region Auxiliares
         [HttpGet]
         [Route("GetPerfiles")]
@@ -235,7 +236,6 @@ namespace backaramis.Controllers
             List<PerfilModel>? data = _mapper.Map<List<PerfilModel>>(perfiles);
             return Ok(data);
         }
-
         #endregion
     }
 }

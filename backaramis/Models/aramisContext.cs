@@ -19,6 +19,9 @@ namespace backaramis.Models
         public virtual DbSet<Cliente> Clientes { get; set; } = null!;
         public virtual DbSet<ClienteGenero> ClienteGeneros { get; set; } = null!;
         public virtual DbSet<ClienteResponsabilidad> ClienteResponsabilidads { get; set; } = null!;
+        public virtual DbSet<Producto> Productos { get; set; } = null!;
+        public virtual DbSet<ProductoIva> ProductoIvas { get; set; } = null!;
+        public virtual DbSet<ProductoRubro> ProductoRubros { get; set; } = null!;
         public virtual DbSet<ProveedorImputacion> ProveedorImputacions { get; set; } = null!;
         public virtual DbSet<SystemOption> SystemOptions { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
@@ -123,6 +126,58 @@ namespace backaramis.Models
                 entity.ToTable("ClienteResponsabilidad");
 
                 entity.Property(e => e.Id)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Producto>(entity =>
+            {
+                entity.ToTable("Producto");
+
+                entity.HasIndex(e => e.Codigo, "KEY_Producto_Codigo")
+                    .IsUnique();
+
+                entity.Property(e => e.Codigo)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Costo).HasColumnType("decimal(18, 2)");
+
+                entity.Property(e => e.Detalle)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Internos).HasColumnType("decimal(18, 2)");
+
+                entity.Property(e => e.Stock).HasColumnType("decimal(18, 2)");
+
+                entity.Property(e => e.Tasa).HasColumnType("decimal(18, 2)");
+
+                entity.HasOne(d => d.IvaNavigation)
+                    .WithMany(p => p.Productos)
+                    .HasForeignKey(d => d.Iva)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Producto_Iva");
+
+                entity.HasOne(d => d.RubroNavigation)
+                    .WithMany(p => p.Productos)
+                    .HasForeignKey(d => d.Rubro)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Producto_Rubro");
+            });
+
+            modelBuilder.Entity<ProductoIva>(entity =>
+            {
+                entity.ToTable("ProductoIva");
+
+                entity.Property(e => e.Tasa).HasColumnType("decimal(18, 2)");
+            });
+
+            modelBuilder.Entity<ProductoRubro>(entity =>
+            {
+                entity.ToTable("ProductoRubro");
+
+                entity.Property(e => e.Detalle)
                     .HasMaxLength(50)
                     .IsUnicode(false);
             });

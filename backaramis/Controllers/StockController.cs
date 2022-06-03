@@ -40,21 +40,21 @@ namespace backaramis.Controllers
             _securityService = securityService;
             _userName = _securityService.GetUserAuthenticated();
         }
-       
+
         [HttpGet("GetProductos")]
         public IActionResult GetProductos()
         {
             try
             {
-                var data = _stockService.GetProductos();
+                IEnumerable<ProductoDto>? data = _stockService.GetProductos();
                 return Ok(data);
             }
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
-        } 
-       
+        }
+
         [HttpPost("InsertProducto")]
         public IActionResult InsertProducto([FromForm] ProductoInsert model)
         {
@@ -65,7 +65,7 @@ namespace backaramis.Controllers
             {
                 // create user
                 _stockGenService.Add(producto);
-                _loggService.Log($"InsertProducto {model.Detalle}", "Stock", "Add",_userName);
+                _loggService.Log($"InsertProducto {model.Detalle}", "Stock", "Add", _userName);
                 return Ok("Correcto");
             }
             catch (Exception ex)
@@ -79,7 +79,7 @@ namespace backaramis.Controllers
         [HttpDelete("DeleteProducto")]
         public IActionResult DeleteProducto(long id)
         {
-            
+
             try
             {
                 // create user
@@ -136,7 +136,7 @@ namespace backaramis.Controllers
         {
             ProductoRubro? productoRubro = _mapper.Map<ProductoRubro>(model);
             try
-            { 
+            {
                 _rubroGenService.Add(productoRubro);
                 _loggService.Log($"InsertRubro {model.Detalle}", "Rubro", "Add", _userName);
                 return Ok("Correcto");
@@ -154,7 +154,7 @@ namespace backaramis.Controllers
         {
 
             try
-            { 
+            {
                 _rubroGenService.Delete(id);
                 _loggService.Log($"DeleteRubro {id}", "Rubro", "Delete", _userName);
                 return Ok("Correcto");
@@ -172,7 +172,7 @@ namespace backaramis.Controllers
         {
             ProductoRubro? productoRubro = _mapper.Map<ProductoRubro>(model);
             try
-            { 
+            {
                 _rubroGenService.Update(productoRubro);
                 _loggService.Log($"UpdateRubro {model.Detalle}", "Rubro", "Update", _userName);
                 return Ok("Correcto");

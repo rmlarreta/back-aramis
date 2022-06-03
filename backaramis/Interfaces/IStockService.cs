@@ -1,10 +1,9 @@
-﻿using backaramis.Models;
-using backaramis.Modelsdtos.Stock;
+﻿using backaramis.Modelsdtos.Stock;
 
 namespace backaramis.Interfaces
 {
-    public interface IStockService  
-    { 
+    public interface IStockService
+    {
         IEnumerable<ProductoDto> GetProductos();
     }
 }

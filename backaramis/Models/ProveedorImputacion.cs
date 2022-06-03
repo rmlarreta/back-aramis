@@ -10,7 +10,8 @@ namespace backaramis.Models
             Clientes = new HashSet<Cliente>();
         }
 
-        public string Id { get; set; } = null!;
+        public long Id { get; set; }
+        public string Detalle { get; set; } = null!;
 
         public virtual ICollection<Cliente> Clientes { get; set; }
     }

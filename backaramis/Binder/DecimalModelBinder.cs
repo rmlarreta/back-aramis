@@ -6,11 +6,11 @@ namespace backaramis.Binder
     {
         public Task BindModelAsync(ModelBindingContext bindingContext)
         {
-            var valueProviderResult = bindingContext.ValueProvider.GetValue(bindingContext.ModelName);
+            ValueProviderResult valueProviderResult = bindingContext.ValueProvider.GetValue(bindingContext.ModelName);
 
             //Primero obtenemos el separador de miles para procesar la información aqui no nos interesa
             //el separador decimal porque a este es ya core y eso lo maneja perfecto el framework
-            var separadormiles = valueProviderResult.Culture.NumberFormat.CurrencyGroupSeparator;
+            string? separadormiles = valueProviderResult.Culture.NumberFormat.CurrencyGroupSeparator;
 
             //Si es nulo pues finaliza la clase sin hacer más
             if (valueProviderResult == null)

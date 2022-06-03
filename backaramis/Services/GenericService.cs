@@ -74,7 +74,7 @@ namespace backaramis.Services
                 throw new Exception(ex.Message);
             }
         }
-
+  
         public IEnumerable<TEntity> Get()
         {
             try

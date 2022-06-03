@@ -1,7 +1,6 @@
 ﻿using backaramis.Interfaces;
 using backaramis.Models;
 using backaramis.Modelsdtos.Stock;
-using Microsoft.Data.SqlClient;
 using System.Data;
 namespace backmaree.Services
 {
@@ -21,16 +20,16 @@ namespace backmaree.Services
             try
             {
                 DataSet ds = _storeProcedure.SpWhithDataSetPure("ProductosGet");
-                List<ProductoDto> productos = new(); 
-                DataTable dtProductos = new(); 
-                dtProductos = ds.Tables[0]; 
+                List<ProductoDto> productos = new();
+                DataTable dtProductos = new();
+                dtProductos = ds.Tables[0];
                 foreach (DataRow row in dtProductos.Rows)
                 {
                     productos.Add(new ProductoDto()
                     {
                         Id = (long)row["Id"],
                         Codigo = row["Codigo"].ToString(),
-                        Detalle = row["Detalle"].ToString(), 
+                        Detalle = row["Detalle"].ToString(),
                         Rubro = (int)row["Rubro"],
                         RubroStr = row["RubroStr"].ToString(),
                         Costo = (decimal)row["Costo"],
@@ -43,7 +42,7 @@ namespace backmaree.Services
                         Precio = (decimal)row["Precio"]
                     });
                 }
-                  
+
                 return productos;
             }
             catch (Exception ex)
@@ -51,6 +50,6 @@ namespace backmaree.Services
                 throw new Exception(ex.Message);
             }
         }
-        
+
     }
 }

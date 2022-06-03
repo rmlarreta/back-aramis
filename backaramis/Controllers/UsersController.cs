@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using backaramis.Helpers;
 using backaramis.Interfaces;
-using backaramis.Models; 
+using backaramis.Models;
 using backaramis.Modelsdtos.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -226,7 +226,7 @@ namespace backaramis.Controllers
                 return BadRequest(new { message = ex.InnerException is not null ? ex.InnerException.Message : ex.Message });
             }
         }
-       
+
         #region Auxiliares
         [HttpGet]
         [Route("GetPerfiles")]

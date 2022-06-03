@@ -19,6 +19,9 @@ namespace backaramis.Models
         public virtual DbSet<Cliente> Clientes { get; set; } = null!;
         public virtual DbSet<ClienteGenero> ClienteGeneros { get; set; } = null!;
         public virtual DbSet<ClienteResponsabilidad> ClienteResponsabilidads { get; set; } = null!;
+        public virtual DbSet<Documento> Documentos { get; set; } = null!;
+        public virtual DbSet<DocumentoDetalle> DocumentoDetalles { get; set; } = null!;
+        public virtual DbSet<DocumentoTipo> DocumentoTipos { get; set; } = null!;
         public virtual DbSet<Producto> Productos { get; set; } = null!;
         public virtual DbSet<ProductoIva> ProductoIvas { get; set; } = null!;
         public virtual DbSet<ProductoRubro> ProductoRubros { get; set; } = null!;
@@ -58,10 +61,7 @@ namespace backaramis.Models
                     .IsUnicode(false)
                     .HasDefaultValueSql("('Masculino')");
 
-                entity.Property(e => e.Imputacion)
-                    .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasDefaultValueSql("('Mercaderia')");
+                entity.Property(e => e.Imputacion).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.LimiteSaldo).HasColumnType("decimal(18, 2)");
 
@@ -85,8 +85,6 @@ namespace backaramis.Models
                     .HasMaxLength(50)
                     .IsUnicode(false)
                     .HasDefaultValueSql("('Consumidor Final')");
-
-                entity.Property(e => e.Saldo).HasColumnType("decimal(18, 2)");
 
                 entity.Property(e => e.Telefono)
                     .HasMaxLength(50)
@@ -128,6 +126,80 @@ namespace backaramis.Models
                 entity.Property(e => e.Id)
                     .HasMaxLength(50)
                     .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Documento>(entity =>
+            {
+                entity.ToTable("Documento");
+
+                entity.Property(e => e.Cai)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Creado).HasColumnType("datetime");
+
+                entity.Property(e => e.Fecha).HasColumnType("datetime");
+
+                entity.Property(e => e.Observaciones)
+                    .HasMaxLength(254)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Operador)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Razon)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Vence).HasColumnType("datetime");
+
+                entity.HasOne(d => d.TipoNavigation)
+                    .WithMany(p => p.Documentos)
+                    .HasForeignKey(d => d.Tipo)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Documento_Tipo");
+            });
+
+            modelBuilder.Entity<DocumentoDetalle>(entity =>
+            {
+                entity.ToTable("DocumentoDetalle");
+
+                entity.Property(e => e.Cantidad).HasColumnType("decimal(18, 2)");
+
+                entity.Property(e => e.Detalle)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Internos).HasColumnType("decimal(18, 2)");
+
+                entity.Property(e => e.Iva).HasColumnType("decimal(18, 2)");
+
+                entity.Property(e => e.Neto).HasColumnType("decimal(18, 2)");
+
+                entity.Property(e => e.Plu)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Rubro)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<DocumentoTipo>(entity =>
+            {
+                entity.ToTable("DocumentoTipo");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.Detalle)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Letra)
+                    .HasMaxLength(1)
+                    .IsUnicode(false)
+                    .IsFixedLength();
             });
 
             modelBuilder.Entity<Producto>(entity =>
@@ -186,7 +258,7 @@ namespace backaramis.Models
             {
                 entity.ToTable("ProveedorImputacion");
 
-                entity.Property(e => e.Id)
+                entity.Property(e => e.Detalle)
                     .HasMaxLength(50)
                     .IsUnicode(false);
             });

@@ -46,12 +46,10 @@ namespace backaramis.Controllers
         {
             try
             {
-                IEnumerable<Cliente>? clientes = _clienteGenService.Get();
-                List<ClienteDto> data = new();
-                foreach (Cliente? cliente in clientes)
-                {
-                    data.Add(_mapper.Map<ClienteDto>(cliente));
-                }
+                List<Cliente>? clientes = _clienteGenService.Get();
+                //List<ClienteDto> data = new();
+                var data = _mapper.Map<List<Cliente>, List<ClienteDto>>(clientes);
+               
                 return Ok(data);
             }
             catch (Exception ex)
@@ -82,19 +80,19 @@ namespace backaramis.Controllers
         }
 
         [HttpPatch("UpdateCLiente")]
-        public IActionResult UpdateCLiente([FromForm] ClienteDto model)
+        public IActionResult UpdateCLiente([FromBody] List<ClienteDto> model)
         {
-            Cliente? cliente = _mapper.Map<Cliente>(model);
+            var cliente = _mapper.Map<List<ClienteDto>,List<Cliente>>(model);
             try
             {
                 // create user
                 _clienteGenService.Update(cliente);
-                _loggService.Log($"UpdateCLiente {model.Nombre}", "Clientes", "Update", _userName);
+                _loggService.Log($"UpdateCLiente {model.First().Nombre}", "Clientes", "Update", _userName);
                 return Ok("Correcto");
             }
             catch (Exception ex)
             {
-                _loggService.Log($"Error UpdateCLiente {model.Nombre}", "Clientes", "Update", _userName);
+                _loggService.Log($"Error UpdateCLiente {model.First().Nombre}", "Clientes", "Update", _userName);
                 // return error message if there was an exception
                 return BadRequest(new { message = ex.Message });
             }
@@ -123,7 +121,7 @@ namespace backaramis.Controllers
         [Route("GetRespo")]
         public IActionResult GetRespo()
         {
-            IEnumerable<ClienteResponsabilidad>? data = _resposGenService.Get();
+            List<ClienteResponsabilidad>? data = _resposGenService.Get();
             return Ok(data);
         }
 
@@ -139,7 +137,7 @@ namespace backaramis.Controllers
         [Route("GetImputaciones")]
         public IActionResult GetImputaciones()
         {
-            IEnumerable<ProveedorImputacion>? data = _imputacionGenService.Get();
+            List<ProveedorImputacion>? data = _imputacionGenService.Get();
             return Ok(data);
         }
 
@@ -162,18 +160,18 @@ namespace backaramis.Controllers
         }
 
         [HttpPatch("UpdateImputaciones")]
-        public IActionResult UpdateImputaciones([FromForm] ProveedorImputacion model)
+        public IActionResult UpdateImputaciones([FromBody] List<ProveedorImputacion> model)
         {
             try
             {
                 // create user
                 _imputacionGenService.Update(model);
-                _loggService.Log($"UpdateImputaciones {model.Id}", "ProveedorImputacion", "Update", _userName);
+                _loggService.Log($"UpdateImputaciones {model.First().Detalle}", "ProveedorImputacion", "Update", _userName);
                 return Ok("Correcto");
             }
             catch (Exception ex)
             {
-                _loggService.Log($"Error UpdateImputaciones {model.Id}", "ProveedorImputacion", "Update", _userName);
+                _loggService.Log($"Error UpdateImputaciones {model.First().Detalle}", "ProveedorImputacion", "Update", _userName);
                 // return error message if there was an exception
                 return BadRequest(new { message = ex.Message });
             }

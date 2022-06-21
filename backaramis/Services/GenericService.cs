@@ -30,7 +30,20 @@ namespace backaramis.Services
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
+            }
+        }
+
+        public void Add(List<TEntity> data)
+        {
+            try
+            {
+                _dbSet.AddRange(data);
+                _context.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
 
@@ -51,7 +64,7 @@ namespace backaramis.Services
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
 
@@ -71,11 +84,11 @@ namespace backaramis.Services
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
   
-        public IEnumerable<TEntity> Get()
+        public List<TEntity> Get()
         {
             try
             {
@@ -83,7 +96,7 @@ namespace backaramis.Services
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
 
@@ -95,21 +108,25 @@ namespace backaramis.Services
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
 
-        public void Update(TEntity data)
+        public void Update(List<TEntity> data)
         {
             try
             {
-                _dbSet.Attach(data);
-                _context.Entry(data).State = EntityState.Modified;
+                _dbSet.UpdateRange(data);
+                
+                foreach(var item in data)
+                {
+                    _context.Entry(item).State = EntityState.Modified;
+                }              
                 _context.SaveChanges();
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
     }

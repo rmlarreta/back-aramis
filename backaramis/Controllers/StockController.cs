@@ -96,19 +96,19 @@ namespace backaramis.Controllers
         }
 
         [HttpPatch("UpdateProducto")]
-        public IActionResult UpdateProducto([FromForm] ProductoUpdate model)
+        public IActionResult UpdateProducto([FromBody] List<ProductoUpdate> model)
         {
-            Producto? producto = _mapper.Map<Producto>(model);
+            var producto = _mapper.Map<List<ProductoUpdate>,List<Producto>>(model);
             try
             {
                 // create user
                 _stockGenService.Update(producto);
-                _loggService.Log($"UpdateProducto {model.Detalle}", "Stock", "Update", _userName);
+                _loggService.Log($"UpdateProducto {model.First().Detalle}", "Stock", "Update", _userName);
                 return Ok("Correcto");
             }
             catch (Exception ex)
             {
-                _loggService.Log($"Error UpdateProducto {model.Detalle}", "Stock", "Update", _userName);
+                _loggService.Log($"Error UpdateProducto {model.First().Detalle}", "Stock", "Update", _userName);
                 // return error message if there was an exception
                 return BadRequest(new { message = ex.Message });
             }
@@ -119,7 +119,7 @@ namespace backaramis.Controllers
         [Route("GetIvas")]
         public IActionResult GetIvas()
         {
-            IEnumerable<ProductoIva>? data = _ivaGenService.Get();
+            List<ProductoIva>? data = _ivaGenService.Get();
             return Ok(data);
         }
 
@@ -127,7 +127,7 @@ namespace backaramis.Controllers
         [Route("GetRubros")]
         public IActionResult GetRubros()
         {
-            IEnumerable<ProductoRubro>? data = _rubroGenService.Get();
+            List<ProductoRubro>? data = _rubroGenService.Get();
             return Ok(data);
         }
 
@@ -168,18 +168,18 @@ namespace backaramis.Controllers
         }
 
         [HttpPatch("UpdateRubro")]
-        public IActionResult UpdateRubro([FromForm] RubroDto model)
+        public IActionResult UpdateRubro([FromBody] List<RubroDto> model)
         {
-            ProductoRubro? productoRubro = _mapper.Map<ProductoRubro>(model);
+            var productoRubro = _mapper.Map<List<RubroDto>,List<ProductoRubro>>(model);
             try
             {
                 _rubroGenService.Update(productoRubro);
-                _loggService.Log($"UpdateRubro {model.Detalle}", "Rubro", "Update", _userName);
+                _loggService.Log($"UpdateRubro {model.First().Detalle}", "Rubro", "Update", _userName);
                 return Ok("Correcto");
             }
             catch (Exception ex)
             {
-                _loggService.Log($"Error UpdateRubro {model.Detalle}", "Rubro", "Update", _userName);
+                _loggService.Log($"Error UpdateRubro {model.First().Detalle}", "Rubro", "Update", _userName);
                 // return error message if there was an exception
                 return BadRequest(new { message = ex.Message });
             }

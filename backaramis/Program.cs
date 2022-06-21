@@ -74,6 +74,7 @@ builder.Services.AddScoped<ILoggService, LoggService>();
 builder.Services.AddScoped<IStoreProcedure, StoreProcedure>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IStockService, StockService>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<SecurityService>();
 
 builder.Services.AddHttpContextAccessor();

@@ -2,12 +2,13 @@
 {
     public interface IGenericService<TEntity>
     {
-        IEnumerable<TEntity> Get();
+        List<TEntity> Get();
         TEntity Get(int id);
         void Add(TEntity data);
+        void Add(List<TEntity> data);
         bool Delete(long id);
         bool Delete(int id); 
-        void Update(TEntity data);
+        void Update(List<TEntity> data);
 
     }
 }

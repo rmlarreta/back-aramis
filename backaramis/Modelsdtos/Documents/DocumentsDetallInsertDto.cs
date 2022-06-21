@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace backaramis.Models
+﻿namespace backaramis.Modelsdtos.Documents
 {
-    public partial class DocumentoDetalle
+    public class DocumentsDetallInsertDto
     {
         public long Id { get; set; }
         public long Documento { get; set; }

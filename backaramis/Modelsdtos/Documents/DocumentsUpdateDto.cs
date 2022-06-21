@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace backaramis.Models
+﻿namespace backaramis.Modelsdtos.Documents
 {
-    public partial class Documento
+    public class DocumentsUpdateDto
     {
         public long Id { get; set; }
         public int Tipo { get; set; }
@@ -17,9 +14,6 @@ namespace backaramis.Models
         public string? Observaciones { get; set; }
         public string Operador { get; set; } = null!;
         public DateTime Creado { get; set; }
-        public int Estado { get; set; }
 
-        public virtual DocumentoEstado EstadoNavigation { get; set; } = null!;
-        public virtual DocumentoTipo TipoNavigation { get; set; } = null!;
-    }
+    } 
 }

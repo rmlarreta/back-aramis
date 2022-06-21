@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace backaramis.Models
+﻿namespace backaramis.Modelsdtos.Documents
 {
-    public partial class DocumentoDetalle
+    public class DocumentsDetallDto
     {
         public long Id { get; set; }
         public long Documento { get; set; }
@@ -15,5 +12,6 @@ namespace backaramis.Models
         public decimal Unitario { get; set; }
         public decimal Iva { get; set; }
         public decimal Internos { get; set; }
+        public decimal SubTotal { get; set; }
     }
 }

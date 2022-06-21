@@ -21,6 +21,7 @@ namespace backaramis.Models
         public virtual DbSet<ClienteResponsabilidad> ClienteResponsabilidads { get; set; } = null!;
         public virtual DbSet<Documento> Documentos { get; set; } = null!;
         public virtual DbSet<DocumentoDetalle> DocumentoDetalles { get; set; } = null!;
+        public virtual DbSet<DocumentoEstado> DocumentoEstados { get; set; } = null!;
         public virtual DbSet<DocumentoTipo> DocumentoTipos { get; set; } = null!;
         public virtual DbSet<Producto> Productos { get; set; } = null!;
         public virtual DbSet<ProductoIva> ProductoIvas { get; set; } = null!;
@@ -138,6 +139,8 @@ namespace backaramis.Models
 
                 entity.Property(e => e.Creado).HasColumnType("datetime");
 
+                entity.Property(e => e.Estado).HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.Fecha).HasColumnType("datetime");
 
                 entity.Property(e => e.Observaciones)
@@ -154,6 +157,12 @@ namespace backaramis.Models
 
                 entity.Property(e => e.Vence).HasColumnType("datetime");
 
+                entity.HasOne(d => d.EstadoNavigation)
+                    .WithMany(p => p.Documentos)
+                    .HasForeignKey(d => d.Estado)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Documento_Estado");
+
                 entity.HasOne(d => d.TipoNavigation)
                     .WithMany(p => p.Documentos)
                     .HasForeignKey(d => d.Tipo)
@@ -167,6 +176,10 @@ namespace backaramis.Models
 
                 entity.Property(e => e.Cantidad).HasColumnType("decimal(18, 2)");
 
+                entity.Property(e => e.Codigo)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.Detalle)
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -175,13 +188,20 @@ namespace backaramis.Models
 
                 entity.Property(e => e.Iva).HasColumnType("decimal(18, 2)");
 
-                entity.Property(e => e.Neto).HasColumnType("decimal(18, 2)");
-
-                entity.Property(e => e.Plu)
+                entity.Property(e => e.Rubro)
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
-                entity.Property(e => e.Rubro)
+                entity.Property(e => e.Unitario).HasColumnType("decimal(18, 2)");
+            });
+
+            modelBuilder.Entity<DocumentoEstado>(entity =>
+            {
+                entity.ToTable("DocumentoEstado");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.Detalle)
                     .HasMaxLength(50)
                     .IsUnicode(false);
             });
@@ -265,7 +285,7 @@ namespace backaramis.Models
 
             modelBuilder.Entity<SystemOption>(entity =>
             {
-                entity.HasNoKey();
+                entity.Property(e => e.Id).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.Contacto)
                     .HasMaxLength(50)

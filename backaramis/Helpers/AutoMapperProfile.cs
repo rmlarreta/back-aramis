@@ -2,6 +2,7 @@ using AutoMapper;
 using backaramis.Models;
 using backaramis.Modelsdtos.Clientes;
 using backaramis.Modelsdtos.Commons;
+using backaramis.Modelsdtos.Documents;
 using backaramis.Modelsdtos.Stock;
 using backaramis.Modelsdtos.Users;
 
@@ -20,6 +21,10 @@ namespace backaramis.Helpers
             CreateMap<Producto, ProductoInsert>().ReverseMap();
             CreateMap<Producto, ProductoUpdate>().ReverseMap();
             CreateMap<ProductoRubro, RubroDto>().ReverseMap();
+
+            CreateMap<DocumentoDetalle, DocumentsDetallInsertDto>().ReverseMap();
+
+            CreateMap<Documento, DocumentsUpdateDto>().ReverseMap();
 
             CreateMap<Cliente, ClienteDto>().ReverseMap();
             CreateMap<Cliente, ClienteInsert>().ReverseMap();

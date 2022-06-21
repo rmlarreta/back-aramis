@@ -5,10 +5,11 @@ namespace backaramis.Models
 {
     public partial class SystemOption
     {
-        public long X { get; set; }
-        public long P { get; set; }
-        public long R { get; set; }
-        public long O { get; set; }
+        public int Id { get; set; }
+        public int X { get; set; }
+        public int P { get; set; }
+        public int R { get; set; }
+        public int O { get; set; }
         public string Cuit { get; set; } = null!;
         public string Razon { get; set; } = null!;
         public string Domicilio { get; set; } = null!;

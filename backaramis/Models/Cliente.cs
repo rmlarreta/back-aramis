@@ -5,6 +5,11 @@ namespace backaramis.Models
 {
     public partial class Cliente
     {
+        public Cliente()
+        {
+            Recibos = new HashSet<Recibo>();
+        }
+
         public long Id { get; set; }
         public long Cuit { get; set; }
         public string Responsabilidad { get; set; } = null!;
@@ -21,5 +26,6 @@ namespace backaramis.Models
         public virtual ClienteGenero GeneroNavigation { get; set; } = null!;
         public virtual ProveedorImputacion ImputacionNavigation { get; set; } = null!;
         public virtual ClienteResponsabilidad ResponsabilidadNavigation { get; set; } = null!;
+        public virtual ICollection<Recibo> Recibos { get; set; }
     }
 }

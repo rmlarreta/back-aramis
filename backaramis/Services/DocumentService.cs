@@ -62,7 +62,8 @@ namespace backaramis.Services
                         Pos = (int)row["Pos"],
                         CodTipo = (int)row["CodTipo"],
                         Tipo = row["Tipo"].ToString(),
-                        Total = (decimal)row["Total"]
+                        Total = (decimal)row["Total"],
+                        Limite = (decimal)row["Limite"]
                     });
                 }
 
@@ -148,12 +149,14 @@ namespace backaramis.Services
             try
             {
                 var document = _context.Documentos.FirstOrDefault(x => x.Id == Id);
+                var persona = _context.Clientes.First(x => x.Id == cliente);
                 if (document == null)
                 {
                     throw new Exception("Verifique, las tablas no están listas");
                 }
 
                 document.Cliente = cliente;
+                document.Razon = persona.Nombre; 
                 _context.SaveChanges();
                 return document;
             }

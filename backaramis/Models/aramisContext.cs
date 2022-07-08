@@ -23,10 +23,13 @@ namespace backaramis.Models
         public virtual DbSet<DocumentoDetalle> DocumentoDetalles { get; set; } = null!;
         public virtual DbSet<DocumentoEstado> DocumentoEstados { get; set; } = null!;
         public virtual DbSet<DocumentoTipo> DocumentoTipos { get; set; } = null!;
+        public virtual DbSet<Point> Points { get; set; } = null!;
         public virtual DbSet<Producto> Productos { get; set; } = null!;
         public virtual DbSet<ProductoIva> ProductoIvas { get; set; } = null!;
         public virtual DbSet<ProductoRubro> ProductoRubros { get; set; } = null!;
         public virtual DbSet<ProveedorImputacion> ProveedorImputacions { get; set; } = null!;
+        public virtual DbSet<Recibo> Recibos { get; set; } = null!;
+        public virtual DbSet<ReciboDetalle> ReciboDetalles { get; set; } = null!;
         public virtual DbSet<SystemOption> SystemOptions { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
         public virtual DbSet<UserLog> UserLogs { get; set; } = null!;
@@ -222,6 +225,23 @@ namespace backaramis.Models
                     .IsFixedLength();
             });
 
+            modelBuilder.Entity<Point>(entity =>
+            {
+                entity.ToTable("Point");
+
+                entity.Property(e => e.Id)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Public).IsUnicode(false);
+
+                entity.Property(e => e.Token).IsUnicode(false);
+
+                entity.Property(e => e.Ubicacion)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
             modelBuilder.Entity<Producto>(entity =>
             {
                 entity.ToTable("Producto");
@@ -281,6 +301,53 @@ namespace backaramis.Models
                 entity.Property(e => e.Detalle)
                     .HasMaxLength(50)
                     .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Recibo>(entity =>
+            {
+                entity.ToTable("Recibo");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.Fecha).HasColumnType("datetime");
+
+                entity.Property(e => e.Operador)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.ClienteNavigation)
+                    .WithMany(p => p.Recibos)
+                    .HasForeignKey(d => d.Cliente)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Recibo_Cliente");
+            });
+
+            modelBuilder.Entity<ReciboDetalle>(entity =>
+            {
+                entity.ToTable("ReciboDetalle");
+
+                entity.Property(e => e.Codigo)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Detalle)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Monto).HasColumnType("decimal(18, 2)");
+
+                entity.Property(e => e.Sucursal)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Tipo)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.ReciboNavigation)
+                    .WithMany(p => p.ReciboDetalles)
+                    .HasForeignKey(d => d.Recibo)
+                    .HasConstraintName("FK_ReciboDetalle_Recibo");
             });
 
             modelBuilder.Entity<SystemOption>(entity =>

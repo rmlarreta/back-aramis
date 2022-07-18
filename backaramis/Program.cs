@@ -69,9 +69,9 @@ builder.Services.AddAuthentication(x =>
 });
 
 // configure DI for application services
-builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
-builder.Services.AddScoped<ILoggService, LoggService>();
-builder.Services.AddScoped<IStoreProcedure, StoreProcedure>();
+builder.Services.AddTransient(typeof(IGenericService<>), typeof(GenericService<>));
+builder.Services.AddTransient<ILoggService, LoggService>();
+builder.Services.AddTransient<IStoreProcedure, StoreProcedure>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();

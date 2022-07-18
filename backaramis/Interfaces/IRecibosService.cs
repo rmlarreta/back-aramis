@@ -5,8 +5,8 @@ namespace backaramis.Interfaces
     public interface IRecibosService
     {
         Task<ReciboDto> Insert(ReciboInsertDto Recibo);
-        Task<PaymentIntentDto> CreatePaymentIntent(PaymentIntentDto PaymentIntent);
-        Task<CancelIntentPayDto> CancelPaymentIntent(CancelIntentPayDto PaymentIntent);
-        Task<StateIntentPayDto> StatePaymentIntent(PaymentIntentDto StateIntentPayDto);
+        Task<PaymentIntentResponeDto> CreatePaymentIntent(PaymentIntentDto PaymentIntent,int id);
+        Task<CancelIntentPayDto> CancelPaymentIntent(string PaymentIntent,int id);
+        Task<StateIntentPayDto> StatePaymentIntent(string paymentIntentId,int id);
     }
 }

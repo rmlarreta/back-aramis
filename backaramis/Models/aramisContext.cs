@@ -229,11 +229,11 @@ namespace backaramis.Models
             {
                 entity.ToTable("Point");
 
-                entity.Property(e => e.Id)
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.DeviceId)
                     .HasMaxLength(50)
                     .IsUnicode(false);
-
-                entity.Property(e => e.Public).IsUnicode(false);
 
                 entity.Property(e => e.Token).IsUnicode(false);
 

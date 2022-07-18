@@ -16,7 +16,7 @@ namespace backaramis.Services
         }
         public void Log(string detalle, string modulo, string tipo, string operador)
         {
-            _context.ChangeTracker.Clear();
+           // _context.ChangeTracker.Clear();
 
             LoggModel loggModel = new()
             {

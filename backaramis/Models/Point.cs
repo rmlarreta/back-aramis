@@ -5,8 +5,8 @@ namespace backaramis.Models
 {
     public partial class Point
     {
-        public string Id { get; set; } = null!;
-        public string Public { get; set; } = null!;
+        public int Id { get; set; }
+        public string? DeviceId { get; set; }
         public string? Token { get; set; }
         public string Ubicacion { get; set; } = null!;
     }

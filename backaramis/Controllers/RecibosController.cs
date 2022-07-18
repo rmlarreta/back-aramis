@@ -10,7 +10,7 @@ namespace backaramis.Controllers
 {
     [Route("[controller]")]
     [ApiController]
- 
+
     public class RecibosController : ControllerBase
     {
         private readonly IRecibosService _recibosService;
@@ -28,24 +28,24 @@ namespace backaramis.Controllers
             SecurityService securityService
             )
         {
-            _recibosService= recibosService;
-            _genericPoint= genericPoint;
-            _loggService= loggService;  
-            _mapper= mapper;
-            _securityService= securityService;
+            _recibosService = recibosService;
+            _genericPoint = genericPoint;
+            _loggService = loggService;
+            _mapper = mapper;
+            _securityService = securityService;
             _userName = _securityService.GetUserAuthenticated();
         }
 
         [HttpPost("InsertRecibo")]
         public IActionResult InsertRecibo([FromBody] ReciboInsertDto model)
         {
-           
+
             model.Operador = _userName;
             model.Fecha = DateTime.Now;
-           
+
             try
             {
-               var data = _recibosService.Insert(model);
+                var data = _recibosService.Insert(model);
                 _loggService.Log($"InsertRecibo {model.Cliente}", "Recibos", "Insert", _userName);
                 return Ok(data);
             }
@@ -58,21 +58,31 @@ namespace backaramis.Controllers
         }
 
 
-        [HttpPost("MP")]
-        public IActionResult MP(PaymentIntentDto paymentIntentDto)
+        [HttpPost]
+        [Route("CreatePaymentIntent/{id}")]
+        public async Task<PaymentIntentResponeDto> CreatePaymentIntent([FromBody] PaymentIntentDto paymentIntentDto, int id)
         {
+            var data = await _recibosService.CreatePaymentIntent(paymentIntentDto, id);
+            return data;
 
-            try
-            {
-                var data = _recibosService.CreatePaymentIntent(paymentIntentDto); 
-                return Ok(data);
-            }
-            catch (Exception ex)
-            {
-                
-                // return error message if there was an exception
-                return BadRequest(new { message = ex.Message });
-            }
+        }
+
+        [HttpDelete]
+        [Route("CancelPaymentIntent/{paymentIntent}/{id}")]
+        public async Task<CancelIntentPayDto> CancelPaymentIntent(string paymentIntent, int id)
+        {
+            var data = await _recibosService.CancelPaymentIntent(paymentIntent, id);
+            return data;
+
+        }
+
+        [HttpGet]
+        [Route("StatePaymentIntent/{paymentIntent}/{id}")]
+        public async Task<StateIntentPayDto> StatePaymentIntent(string paymentIntent, int id)
+        {
+            var data = await _recibosService.StatePaymentIntent(paymentIntent, id);
+            return data;
+
         }
 
         [HttpGet]

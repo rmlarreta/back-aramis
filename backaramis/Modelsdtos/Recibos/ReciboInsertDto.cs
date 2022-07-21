@@ -7,7 +7,7 @@ namespace backaramis.Modelsdtos.Recibos
         public long Cliente { get; set; }
         public DateTime Fecha { get; set; }
         public string Operador { get; set; } = null!;
-        public IEnumerable<ReciboDetalleInsertDto>? ReciboDetalles { get; set; }
-        public IEnumerable<DocumentsDto>? Documents { get; set; }
+        public List<ReciboDetalleInsertDto>? ReciboDetalles { get; set; }
+        public int[]? Documents { get; set; }
     }
 }

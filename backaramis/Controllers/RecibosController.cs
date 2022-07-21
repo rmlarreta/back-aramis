@@ -37,7 +37,7 @@ namespace backaramis.Controllers
         }
 
         [HttpPost("InsertRecibo")]
-        public IActionResult InsertRecibo([FromBody] ReciboInsertDto model)
+        public async Task<ReciboDto> InsertRecibo([FromBody] ReciboInsertDto model)
         {
 
             model.Operador = _userName;
@@ -45,15 +45,15 @@ namespace backaramis.Controllers
 
             try
             {
-                var data = _recibosService.Insert(model);
+                var data = await _recibosService.Insert(model);
                 _loggService.Log($"InsertRecibo {model.Cliente}", "Recibos", "Insert", _userName);
-                return Ok(data);
+                return data;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 _loggService.Log($"ErrorInsertRecibo {model.Cliente}", "Recibos", "Insert", _userName);
                 // return error message if there was an exception
-                return BadRequest(new { message = ex.Message });
+                return null;
             }
         }
 

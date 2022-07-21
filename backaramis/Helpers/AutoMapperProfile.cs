@@ -26,6 +26,7 @@ namespace backaramis.Helpers
             CreateMap<DocumentoDetalle, DocumentsDetallInsertDto>().ReverseMap();
 
             CreateMap<Documento, DocumentsUpdateDto>().ReverseMap();
+            CreateMap<Documento, DocumentsDto>().ReverseMap();
 
             CreateMap<Recibo, ReciboInsertDto>().ReverseMap();
             CreateMap<Recibo, ReciboDto>().ReverseMap();
@@ -35,6 +36,7 @@ namespace backaramis.Helpers
 
             CreateMap<Cliente, ClienteDto>().ReverseMap();
             CreateMap<Cliente, ClienteInsert>().ReverseMap();
+             
         }
     }
 }

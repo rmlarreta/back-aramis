@@ -5,6 +5,7 @@ using backaramis.Modelsdtos.Documents;
 using backaramis.Modelsdtos.Recibos;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Data;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -17,10 +18,12 @@ namespace backaramis.Services
     {
         private readonly aramisContext _context;
         private readonly IMapper _mapper;
-        public RecibosService(aramisContext context, IMapper mapper)
+        private readonly IStoreProcedure _storeProcedure;
+        public RecibosService(aramisContext context, IMapper mapper, IStoreProcedure storeProcedure)
         {
             _context = context;
             _mapper = mapper;
+            _storeProcedure = storeProcedure;
         }
         public async Task<PaymentIntentResponeDto> CreatePaymentIntent(PaymentIntentDto PaymentIntent, int id)
         {
@@ -195,64 +198,145 @@ namespace backaramis.Services
                 throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
-        public async Task<ReciboDto> Insert(ReciboInsertDto ReciboInsert)
+        public async Task<int> Insert(ReciboInsertDto ReciboInsert)
         {
             try
             {
-                var Recibo = _mapper.Map<ReciboInsertDto, Recibo>(ReciboInsert);
-            
-                var systemOption = await _context.SystemOptions.FirstOrDefaultAsync();
+                Recibo? Recibo = _mapper.Map<ReciboInsertDto, Recibo>(ReciboInsert);
+
+                SystemOption? systemOption = await _context.SystemOptions.FirstOrDefaultAsync();
                 if (systemOption == null)
                 {
                     throw new Exception("Verifique, las tablas no están listas");
                 }
                 systemOption.R += 1; //numero de recibo
-                _context.SystemOptions.Attach(systemOption);
                 Recibo.Id = systemOption.R;
+                _context.SystemOptions.Attach(systemOption);
 
                 decimal Total = 0;
+                decimal PagoAplicado = 0;
+
                 foreach (var d in Recibo.ReciboDetalles)
                 {
                     Total += d.Monto;
                     d.Recibo = Recibo.Id;
-                } 
+                }
 
                 await _context.Recibos.AddAsync(Recibo);
 
-                  foreach (var doc in ReciboInsert.Documents)
+                foreach (var doc in ReciboInsert.Documents)
                 {
-                    _context.Documentos.First(d => d.Id == doc).Recibo = Recibo.Id;
+                    var docu = await _context.Documentos.FirstAsync(d => d.Id == doc);
+                    docu.Recibo = Recibo.Id;
+                    var q = from d in _context.DocumentoDetalles
+                            where d.Documento == doc
+                            select d.Unitario * d.Cantidad;
+                    if (Total - PagoAplicado >= q.Sum() - docu.Pago)
+                    {
+                        docu.Pago = q.Sum();
+                        PagoAplicado += q.Sum();
+                    }
+                    else if (Total - PagoAplicado >= 0)
+                    {
+                        docu.Pago += Total - PagoAplicado;
+                        PagoAplicado = Total;
+                    }
                 }
-                 
+
+                //Manejo del Documento
+                if (ReciboInsert.CodTipo != null)
+                {
+                    var documento = await _context.Documentos.FirstAsync(x => x.Id == ReciboInsert.Documents.First());
+                    if (documento != null)
+                    {
+                        documento.Tipo = (int)ReciboInsert.CodTipo;
+                        //Si viene CodTipo => la operación es directa => descuenta el stock -> Conviene sacarlo por SP. Es mas rápido
+                        documento.Estado = _context.DocumentoEstados.FirstOrDefaultAsync(d => d.Detalle == "ENTREGADO").Result.Id;
+                    }
+                }
+
                 var result = await _context.SaveChangesAsync();
 
-                var cliente = await _context.Clientes.FirstAsync(x => x.Id == Recibo.Cliente);
+                return result > 0 ? Recibo.Id : throw new Exception("No se pudo ingresar el Recibo");
 
-                var detalles = await (from det in _context.ReciboDetalles
-                                      where det.Recibo == Recibo.Id
-                                      select det).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
+            }
+        }
 
-                var documentos = await (from doc in _context.Documentos
-                                        where doc.Recibo == Recibo.Id
-                                        select doc).ToListAsync();
+        public ReciboDto GetRecibo(int id)
+        {
+            try
+            {
+                DataSet ds = new();
 
-                var documentosDto = _mapper.Map<List<Documento>, List<DocumentsDto>>(documentos);
-                var detallesDto = _mapper.Map<List<ReciboDetalle>, List<ReciboDetallDto>>(detalles);
-
-                var reciboDto = new ReciboDto
+                List<SqlParameter> Params = new();
+                if (id != 0)
                 {
-                    Cliente = cliente.Id,
-                    Cuit = cliente.Cuit,
-                    Nombre = cliente.Nombre,
-                    Fecha = Recibo.Fecha,
-                    Operador = Recibo.Operador,
-                    Total = Math.Round(Total, 2),
-                    Id = Recibo.Id,
-                    Detalles = detallesDto,
-                    Documents = documentosDto
+                    Params.Add(new SqlParameter("@recibo", id));
+                }
 
+                ds = _storeProcedure.SpWhithDataSetPure("ReciboDto", Params);
+                ReciboDto reciboDto = new();
+                List<ReciboDetallDto>? detalles = new();
+                List<DocumentsDto>? documents = new();
+                DataTable dtDocuments = new();
+                DataTable dtDetalles = new();
+                DataTable dtRecibo = new();
+                dtRecibo = ds.Tables[0];
+                dtDetalles = ds.Tables[1];
+                dtDocuments = ds.Tables[2];          
+
+
+                foreach (DataRow row in dtDetalles.Rows)
+                {
+                    detalles.Add(new ReciboDetallDto()
+                    {
+                        Id = (long)row["Id"],
+                        Codigo = row["Codigo"].ToString(),
+                        Detalle = row["Detalle"].ToString(),
+                        Sucursal = row["Sucursal"].ToString(),
+                        Tipo = row["Tipo"].ToString(),
+                        Monto = (decimal)row["Monto"]
+                    });
+                }
+
+                foreach (DataRow row in dtDocuments.Rows)
+                {
+                    documents.Add(new DocumentsDto()
+                    {
+                        Id = (long)row["Id"],
+                        Cuit = (long)row["Cuit"],
+                        Fecha = (DateTime)row["Fecha"],
+                        Letra = row["Letra"].ToString(),
+                        Nombre = row["Nombre"].ToString(),
+                        Cliente = (long)row["Cliente"],
+                        Numero = (int)row["Numero"],
+                        Observaciones = row["Observaciones"].ToString(),
+                        Operador = row["Operador"].ToString(),
+                        Pos = (int)row["Pos"],
+                        CodTipo = (int)row["CodTipo"],
+                        Tipo = row["Tipo"].ToString(),
+                        Total = (decimal)row["Total"],
+                        Limite = (decimal)row["Limite"],
+                        EstadoPago = row["EstadoPago"].ToString()
+                    });
+                }
+
+                foreach (DataRow row in dtRecibo.Rows)
+                {
+                    reciboDto.Id = (int)row["Id"];
+                    reciboDto.Cliente = (long)row["Cliente"];
+                    reciboDto.Cuit = (long)row["Cuit"];
+                    reciboDto.Nombre = row["Nombre"].ToString();
+                    reciboDto.Fecha = (DateTime)row["Fecha"];
+                    reciboDto.Operador = row["Operador"].ToString();
+                    reciboDto.Total = (decimal)row["Total"];
+                    reciboDto.Documents = documents;
+                    reciboDto.Detalles = detalles;
                 };
-
 
                 return reciboDto;
 
@@ -262,11 +346,5 @@ namespace backaramis.Services
                 throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
-
-
-
-
-
-
     }
 }

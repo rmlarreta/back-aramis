@@ -19,6 +19,7 @@ namespace backaramis.Models
         public DateTime Creado { get; set; }
         public int Estado { get; set; }
         public int? Recibo { get; set; }
+        public decimal? Pago { get; set; }
 
         public virtual DocumentoEstado EstadoNavigation { get; set; } = null!;
         public virtual DocumentoTipo TipoNavigation { get; set; } = null!;

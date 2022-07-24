@@ -16,6 +16,7 @@
         public string? Observaciones { get; set; } = null;
         public string? Operador { get; set; } = null;
         public decimal Total { get; set; }
+        public string? EstadoPago { get; set; } = null;
 
     }
 }

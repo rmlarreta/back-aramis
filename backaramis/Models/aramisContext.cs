@@ -154,6 +154,8 @@ namespace backaramis.Models
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
+                entity.Property(e => e.Pago).HasColumnType("decimal(18, 2)");
+
                 entity.Property(e => e.Razon)
                     .HasMaxLength(50)
                     .IsUnicode(false);

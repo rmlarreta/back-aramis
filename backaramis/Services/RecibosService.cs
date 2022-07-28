@@ -198,7 +198,7 @@ namespace backaramis.Services
                 throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
-        public async Task<int> Insert(ReciboInsertDto ReciboInsert)
+        public async Task<ReciboDto> Insert(ReciboInsertDto ReciboInsert)
         {
             try
             {
@@ -226,8 +226,8 @@ namespace backaramis.Services
 
                 foreach (var doc in ReciboInsert.Documents)
                 {
+                    //cambiamos de update el document a insertar un documento-recibo con el monto
                     var docu = await _context.Documentos.FirstAsync(d => d.Id == doc);
-                    docu.Recibo = Recibo.Id;
                     var q = from d in _context.DocumentoDetalles
                             where d.Documento == doc
                             select d.Unitario * d.Cantidad;
@@ -235,12 +235,27 @@ namespace backaramis.Services
                     {
                         docu.Pago = q.Sum();
                         PagoAplicado += q.Sum();
+                        DocumentoRecibo documentoRecibo = new()
+                        {
+                            Documento = docu.Id,
+                            Recibo = Recibo.Id,
+                            Monto = docu.Pago
+                        };
+                        _context.DocumentoRecibos.Add(documentoRecibo);
                     }
                     else if (Total - PagoAplicado >= 0)
                     {
                         docu.Pago += Total - PagoAplicado;
                         PagoAplicado = Total;
+                        DocumentoRecibo documentoRecibo = new()
+                        {
+                            Documento = docu.Id,
+                            Recibo = Recibo.Id,
+                            Monto = Total - PagoAplicado
+                        };
+                        _context.DocumentoRecibos.Add(documentoRecibo);
                     }
+                    _context.Documentos.Update(docu);
                 }
 
                 //Manejo del Documento
@@ -249,15 +264,26 @@ namespace backaramis.Services
                     var documento = await _context.Documentos.FirstAsync(x => x.Id == ReciboInsert.Documents.First());
                     if (documento != null)
                     {
-                        documento.Tipo = (int)ReciboInsert.CodTipo;
-                        //Si viene CodTipo => la operación es directa => descuenta el stock -> Conviene sacarlo por SP. Es mas rápido
                         documento.Estado = _context.DocumentoEstados.FirstOrDefaultAsync(d => d.Detalle == "ENTREGADO").Result.Id;
+                        //si viene de un presupuesto lo transforma en lo que sea
+                        if (documento.Tipo == _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "PRESUPUESTO").Id)
+                            documento.Tipo = _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "REMITO").Id;
+                        //si viene de una orden la modifica y crea uno nuevo
+
+                        if (documento.Tipo == _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "ORDEN DE SERVICIO").Id)
+                        {
+                            Documento newRemito = new();
+                            newRemito = documento;
+                            newRemito.Tipo = _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "REMITO").Id;
+                            _context.Documentos.Add(newRemito);
+                        }
                     }
+                    _context.Documentos.Update(documento);
                 }
 
                 var result = await _context.SaveChangesAsync();
 
-                return result > 0 ? Recibo.Id : throw new Exception("No se pudo ingresar el Recibo");
+                return result > 0 ? GetRecibo(Recibo.Id) : throw new Exception("No se pudo ingresar el Recibo");
 
             }
             catch (Exception ex)
@@ -265,7 +291,6 @@ namespace backaramis.Services
                 throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
-
         public ReciboDto GetRecibo(int id)
         {
             try
@@ -287,7 +312,7 @@ namespace backaramis.Services
                 DataTable dtRecibo = new();
                 dtRecibo = ds.Tables[0];
                 dtDetalles = ds.Tables[1];
-                dtDocuments = ds.Tables[2];          
+                dtDocuments = ds.Tables[2];
 
 
                 foreach (DataRow row in dtDetalles.Rows)

@@ -16,13 +16,13 @@ namespace backaramis.Services
             _storeProcedure = storeProcedure;
             _context = context;
         }
-        public Documents GetDocuments(long? Id = null, int? tipo = null)
+        public Documents GetDocuments(long? Id = null, int? tipo = null, int ? estado = null)
         {
 
             try
             {
                 DataSet ds = new();
-                if (Id == null && tipo == null)
+                if (Id == null && tipo == null && estado == null)
                 {
                     ds = _storeProcedure.SpWhithDataSetPure("DocumentoGet");
                 }
@@ -36,6 +36,10 @@ namespace backaramis.Services
                     if (tipo != null)
                     {
                         Params.Add(new SqlParameter("@tipo", tipo));
+                    }
+                    if (estado != null)
+                    {
+                        Params.Add(new SqlParameter("@estado", estado));
                     }
                     ds = _storeProcedure.SpWhithDataSetPure("DocumentoGet", Params);
                 }

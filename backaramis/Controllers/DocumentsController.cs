@@ -11,7 +11,7 @@ namespace backaramis.Controllers
     [Authorize]
     [ApiController]
     [Route("[controller]")]
-    public class DocumentsController : Controller
+    public class DocumentsController : ControllerBase
     {
         private readonly IDocumentService _documentService;
         private readonly IGenericService<DocumentoDetalle> _genericDelService;
@@ -44,7 +44,7 @@ namespace backaramis.Controllers
         {
             try
             {
-                Documents? data = _documentService.GetDocuments(null,null);
+                Documents? data = _documentService.GetDocuments(null,null,null);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -58,7 +58,7 @@ namespace backaramis.Controllers
         {
             try
             {
-                Documents? data = _documentService.GetDocuments(id,null);
+                Documents? data = _documentService.GetDocuments(id,null,null);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -67,12 +67,12 @@ namespace backaramis.Controllers
             }
         }
 
-        [HttpGet("GetDocumentsByTipo/{tipo}")]
-        public IActionResult GetDocumentsByTipo(int tipo)
+        [HttpGet("GetDocumentsByTipo/{tipo}/{estado:int?}")]
+        public IActionResult GetDocumentsByTipo(int tipo,int estado=1)
         {
             try
             {
-                Documents? data = _documentService.GetDocuments(null, tipo);
+                Documents? data = _documentService.GetDocuments(null, tipo, estado); 
                 return Ok(data);
             }
             catch (Exception ex)
@@ -225,5 +225,15 @@ namespace backaramis.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [HttpGet("GetPdf")]
+        [AllowAnonymous]
+        public IActionResult PhysicalLocation()
+            {
+                string physicalPath = "https://core.ac.uk/download/pdf/250239029.pdf";
+                byte[] pdfBytes = System.IO.File.ReadAllBytes(physicalPath);
+                MemoryStream ms = new MemoryStream(pdfBytes);
+                return new FileStreamResult(ms, "application/pdf");
+            } 
     }
 }

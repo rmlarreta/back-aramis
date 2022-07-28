@@ -22,6 +22,7 @@ namespace backaramis.Models
         public virtual DbSet<Documento> Documentos { get; set; } = null!;
         public virtual DbSet<DocumentoDetalle> DocumentoDetalles { get; set; } = null!;
         public virtual DbSet<DocumentoEstado> DocumentoEstados { get; set; } = null!;
+        public virtual DbSet<DocumentoRecibo> DocumentoRecibos { get; set; } = null!;
         public virtual DbSet<DocumentoTipo> DocumentoTipos { get; set; } = null!;
         public virtual DbSet<Point> Points { get; set; } = null!;
         public virtual DbSet<Producto> Productos { get; set; } = null!;
@@ -209,6 +210,23 @@ namespace backaramis.Models
                 entity.Property(e => e.Detalle)
                     .HasMaxLength(50)
                     .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<DocumentoRecibo>(entity =>
+            {
+                entity.ToTable("DocumentoRecibo");
+
+                entity.Property(e => e.Monto).HasColumnType("decimal(18, 2)");
+
+                entity.HasOne(d => d.DocumentoNavigation)
+                    .WithMany(p => p.DocumentoRecibos)
+                    .HasForeignKey(d => d.Documento)
+                    .HasConstraintName("FK_DocumentoRecibo_Documento");
+
+                entity.HasOne(d => d.ReciboNavigation)
+                    .WithMany(p => p.DocumentoRecibos)
+                    .HasForeignKey(d => d.Recibo)
+                    .HasConstraintName("FK_DocumentoRecibo_Recibo");
             });
 
             modelBuilder.Entity<DocumentoTipo>(entity =>

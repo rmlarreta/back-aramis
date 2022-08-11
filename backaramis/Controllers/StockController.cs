@@ -98,7 +98,7 @@ namespace backaramis.Controllers
         [HttpPatch("UpdateProducto")]
         public IActionResult UpdateProducto([FromBody] List<ProductoUpdate> model)
         {
-            var producto = _mapper.Map<List<ProductoUpdate>,List<Producto>>(model);
+            List<Producto>? producto = _mapper.Map<List<ProductoUpdate>, List<Producto>>(model);
             try
             {
                 // create user
@@ -170,7 +170,7 @@ namespace backaramis.Controllers
         [HttpPatch("UpdateRubro")]
         public IActionResult UpdateRubro([FromBody] List<RubroDto> model)
         {
-            var productoRubro = _mapper.Map<List<RubroDto>,List<ProductoRubro>>(model);
+            List<ProductoRubro>? productoRubro = _mapper.Map<List<RubroDto>, List<ProductoRubro>>(model);
             try
             {
                 _rubroGenService.Update(productoRubro);

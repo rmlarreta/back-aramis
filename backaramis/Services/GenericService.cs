@@ -87,7 +87,7 @@ namespace backaramis.Services
                 throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
-  
+
         public List<TEntity> Get()
         {
             try
@@ -117,11 +117,11 @@ namespace backaramis.Services
             try
             {
                 _dbSet.UpdateRange(data);
-                
-                foreach(var item in data)
+
+                foreach (TEntity? item in data)
                 {
                     _context.Entry(item).State = EntityState.Modified;
-                }              
+                }
                 _context.SaveChanges();
             }
             catch (Exception ex)

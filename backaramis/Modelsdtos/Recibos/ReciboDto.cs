@@ -14,6 +14,6 @@ namespace backaramis.Modelsdtos.Recibos
         public List<ReciboDetallDto>? Detalles { get; set; }
         public List<DocumentsDto>? Documents { get; set; }
 
-      
+
     }
 }

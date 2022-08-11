@@ -5,7 +5,6 @@ using backaramis.Models;
 using backaramis.Modelsdtos.Documents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
 namespace backaramis.Controllers
 {
     [Authorize]
@@ -44,7 +43,7 @@ namespace backaramis.Controllers
         {
             try
             {
-                Documents? data = _documentService.GetDocuments(null,null,null);
+                Documents? data = _documentService.GetDocuments(null, null, null);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -58,7 +57,7 @@ namespace backaramis.Controllers
         {
             try
             {
-                Documents? data = _documentService.GetDocuments(id,null,null);
+                Documents? data = _documentService.GetDocuments(id, null, null);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -68,11 +67,11 @@ namespace backaramis.Controllers
         }
 
         [HttpGet("GetDocumentsByTipo/{tipo}/{estado:int?}")]
-        public IActionResult GetDocumentsByTipo(int tipo,int estado=1)
+        public IActionResult GetDocumentsByTipo(int tipo, int estado = 1)
         {
             try
             {
-                Documents? data = _documentService.GetDocuments(null, tipo, estado); 
+                Documents? data = _documentService.GetDocuments(null, tipo, estado);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -101,12 +100,12 @@ namespace backaramis.Controllers
         [HttpPatch("UpdateDocument")]
         public IActionResult UpdateDocument([FromBody] List<DocumentsUpdateDto> model)
         {
-            foreach (var item in model)
+            foreach (DocumentsUpdateDto? item in model)
             {
                 item.Operador = _userName;
                 item.Creado = DateTime.Now;
             }
-            var data = _mapper.Map<List<DocumentsUpdateDto>, List<Documento>>(model);
+            List<Documento>? data = _mapper.Map<List<DocumentsUpdateDto>, List<Documento>>(model);
             try
             {
                 _genericDocService.Update(data);
@@ -124,9 +123,9 @@ namespace backaramis.Controllers
         [HttpPatch("InsertOrden/{id}")]
         public IActionResult InsertOrden(long id)
         {
-             try
+            try
             {
-                var data=_documentService.InsertOrden(id);
+                Documento? data = _documentService.InsertOrden(id);
                 _loggService.Log($"InsertOrden {data.Numero}", "Orden", "Insert", _userName);
                 return Ok("Correcto");
             }
@@ -139,11 +138,11 @@ namespace backaramis.Controllers
         }
 
         [HttpPatch("UpdateClienteDocument/{id}/{cliente}")]
-        public IActionResult UpdateClienteDocument(long id,long cliente)
+        public IActionResult UpdateClienteDocument(long id, long cliente)
         {
             try
             {
-                var data = _documentService.UpdateClienteDocument(id,cliente);
+                Documento? data = _documentService.UpdateClienteDocument(id, cliente);
                 _loggService.Log($"UpdateClienteDocument {id} {cliente}", "Document", "Update", _userName);
                 return Ok("Correcto");
             }
@@ -178,7 +177,7 @@ namespace backaramis.Controllers
         {
             try
             {
-                var data = _mapper.Map<List<DocumentsDetallInsertDto>, List<DocumentoDetalle>>(model);
+                List<DocumentoDetalle>? data = _mapper.Map<List<DocumentsDetallInsertDto>, List<DocumentoDetalle>>(model);
                 _genericDelService.Add(data);
                 _loggService.Log($"InsertDetall {model.First().Detalle} en {model.First().Documento}", "Operaciones", "Update", _userName);
                 return Ok("Correcto");
@@ -211,7 +210,7 @@ namespace backaramis.Controllers
         [HttpPatch("UpdateDetall")]
         public IActionResult UpdateDetall([FromBody] List<DocumentsDetallInsertDto> model)
         {
-            var data = _mapper.Map<List<DocumentsDetallInsertDto>, List<DocumentoDetalle>>(model);
+            List<DocumentoDetalle>? data = _mapper.Map<List<DocumentsDetallInsertDto>, List<DocumentoDetalle>>(model);
             try
             {
                 _genericDelService.Update(data);
@@ -226,14 +225,11 @@ namespace backaramis.Controllers
             }
         }
 
-        [HttpGet("GetPdf")]
+        [HttpGet("ReportRemito/{id}")] 
         [AllowAnonymous]
-        public IActionResult PhysicalLocation()
-            {
-                string physicalPath = "https://core.ac.uk/download/pdf/250239029.pdf";
-                byte[] pdfBytes = System.IO.File.ReadAllBytes(physicalPath);
-                MemoryStream ms = new MemoryStream(pdfBytes);
-                return new FileStreamResult(ms, "application/pdf");
-            } 
+        public IActionResult ReportRemito(int id)
+        {
+           return _documentService.ReporteRemito(id);
+        }
     }
 }

@@ -3,7 +3,6 @@ using backaramis.Helpers;
 using backaramis.Interfaces;
 using backaramis.Models;
 using backaramis.Modelsdtos.Recibos;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backaramis.Controllers
@@ -45,7 +44,7 @@ namespace backaramis.Controllers
 
             try
             {
-                var data = await _recibosService.Insert(model);
+                ReciboDto? data = await _recibosService.Insert(model);
                 _loggService.Log($"InsertRecibo {data.Id}", "Recibos", "Insert", _userName);
                 return data;
             }
@@ -62,7 +61,7 @@ namespace backaramis.Controllers
         [Route("CreatePaymentIntent/{id}")]
         public async Task<PaymentIntentResponeDto> CreatePaymentIntent([FromBody] PaymentIntentDto paymentIntentDto, int id)
         {
-            var data = await _recibosService.CreatePaymentIntent(paymentIntentDto, id);
+            PaymentIntentResponeDto? data = await _recibosService.CreatePaymentIntent(paymentIntentDto, id);
             return data;
 
         }
@@ -71,7 +70,7 @@ namespace backaramis.Controllers
         [Route("CancelPaymentIntent/{paymentIntent}/{id}")]
         public async Task<CancelIntentPayDto> CancelPaymentIntent(string paymentIntent, int id)
         {
-            var data = await _recibosService.CancelPaymentIntent(paymentIntent, id);
+            CancelIntentPayDto? data = await _recibosService.CancelPaymentIntent(paymentIntent, id);
             return data;
 
         }
@@ -80,7 +79,7 @@ namespace backaramis.Controllers
         [Route("StatePaymentIntent/{paymentIntent}/{id}")]
         public async Task<StateIntentPayDto> StatePaymentIntent(string paymentIntent, int id)
         {
-            var data = await _recibosService.StatePaymentIntent(paymentIntent, id);
+            StateIntentPayDto? data = await _recibosService.StatePaymentIntent(paymentIntent, id);
             return data;
 
         }
@@ -89,7 +88,7 @@ namespace backaramis.Controllers
         [Route("GetRecibo/{id}")]
         public IActionResult GetRecibo(int id)
         {
-            var data = _recibosService.GetRecibo(id);
+            ReciboDto? data = _recibosService.GetRecibo(id);
             return Ok(data);
 
         }

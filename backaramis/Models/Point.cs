@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace backaramis.Models
+﻿namespace backaramis.Models
 {
     public partial class Point
     {

@@ -15,5 +15,5 @@
         public string Operador { get; set; } = null!;
         public DateTime Creado { get; set; }
 
-    } 
+    }
 }

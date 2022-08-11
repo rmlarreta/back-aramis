@@ -1,6 +1,4 @@
-﻿using backaramis.Modelsdtos.Documents;
-
-namespace backaramis.Modelsdtos.Recibos
+﻿namespace backaramis.Modelsdtos.Recibos
 {
     public class ReciboInsertDto
     {

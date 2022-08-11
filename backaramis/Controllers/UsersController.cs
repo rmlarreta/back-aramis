@@ -232,8 +232,8 @@ namespace backaramis.Controllers
         [Route("GetPerfiles")]
         public IActionResult GetPerfiles()
         {
-            var perfiles = _perfilesServices.Get();
-            var data = _mapper.Map<List<UserPerfil>,List<PerfilModel>>(perfiles);
+            List<UserPerfil>? perfiles = _perfilesServices.Get();
+            List<PerfilModel>? data = _mapper.Map<List<UserPerfil>, List<PerfilModel>>(perfiles);
             return Ok(data);
         }
         #endregion

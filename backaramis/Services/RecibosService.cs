@@ -5,10 +5,8 @@ using backaramis.Modelsdtos.Documents;
 using backaramis.Modelsdtos.Recibos;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Data;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace backaramis.Services
@@ -30,20 +28,20 @@ namespace backaramis.Services
             try
             {
                 await Getpaymentintentlist(id);
-                var point = _context.Points.Find(id);
+                Point? point = _context.Points.Find(id);
                 if (point == null)
                 {
                     throw new Exception("Verifique, no existen dispositivos asociados");
                 }
-                using (var httpClient = new HttpClient())
+                using (HttpClient? httpClient = new HttpClient())
                 {
-                    using var request = new HttpRequestMessage(new HttpMethod("POST"), $"https://api.mercadopago.com/point/integration-api/devices/{point.DeviceId}/payment-intents");
+                    using HttpRequestMessage? request = new HttpRequestMessage(new HttpMethod("POST"), $"https://api.mercadopago.com/point/integration-api/devices/{point.DeviceId}/payment-intents");
                     request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {point.Token}");
                     request.Headers.TryAddWithoutValidation("x-test-scope", "sandbox"); //borrar en produccion
                     request.Content = JsonContent.Create(PaymentIntent);
                     request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
 
-                    using var response = await httpClient.SendAsync(request);
+                    using HttpResponseMessage? response = await httpClient.SendAsync(request);
                     if (response.IsSuccessStatusCode)
                     {
                         try
@@ -74,23 +72,23 @@ namespace backaramis.Services
         {
             try
             {
-                var point = _context.Points.Find(id);
+                Point? point = _context.Points.Find(id);
                 if (point == null)
                 {
                     throw new Exception("Verifique, no existen dispositivos asociados");
                 }
-                using (var httpClient = new HttpClient())
+                using (HttpClient? httpClient = new HttpClient())
                 {
-                    using var request = new HttpRequestMessage(new HttpMethod("GET"), $"https://api.mercadopago.com/point/integration-api/payment-intents/events?startDate={DateTime.Today.ToString("yyyy-MM-dd")}&endDate={DateTime.Today.ToString("yyyy-MM-dd")}");
+                    using HttpRequestMessage? request = new HttpRequestMessage(new HttpMethod("GET"), $"https://api.mercadopago.com/point/integration-api/payment-intents/events?startDate={DateTime.Today.ToString("yyyy-MM-dd")}&endDate={DateTime.Today.ToString("yyyy-MM-dd")}");
                     request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {point.Token}");
                     request.Headers.TryAddWithoutValidation("x-test-scope", "sandbox"); //borrar en produccion
-                    using var response = await httpClient.SendAsync(request);
+                    using HttpResponseMessage? response = await httpClient.SendAsync(request);
                     if (response.IsSuccessStatusCode)
                     {
                         try
                         {
-                            var events = await response.Content.ReadFromJsonAsync<EventoDto>();
-                            foreach (var evento in events.events)
+                            EventoDto? events = await response.Content.ReadFromJsonAsync<EventoDto>();
+                            foreach (Evento? evento in events.events)
                             {
                                 if (evento.status == "OPEN")
                                 {
@@ -120,17 +118,17 @@ namespace backaramis.Services
         {
             try
             {
-                var point = _context.Points.Find(id);
+                Point? point = _context.Points.Find(id);
                 if (point == null)
                 {
                     throw new Exception("Verifique, no existen dispositivos asociados");
                 }
-                using (var httpClient = new HttpClient())
+                using (HttpClient? httpClient = new HttpClient())
                 {
-                    using var request = new HttpRequestMessage(new HttpMethod("DELETE"), $"https://api.mercadopago.com/point/integration-api/devices/{point.DeviceId}/payment-intents/{paymentIntent}");
+                    using HttpRequestMessage? request = new HttpRequestMessage(new HttpMethod("DELETE"), $"https://api.mercadopago.com/point/integration-api/devices/{point.DeviceId}/payment-intents/{paymentIntent}");
                     request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {point.Token}");
                     request.Headers.TryAddWithoutValidation("x-test-scope", "sandbox"); //borrar en produccion
-                    using var response = await httpClient.SendAsync(request);
+                    using HttpResponseMessage? response = await httpClient.SendAsync(request);
                     if (response.IsSuccessStatusCode)
                     {
                         try
@@ -161,17 +159,17 @@ namespace backaramis.Services
         {
             try
             {
-                var point = _context.Points.Find(id);
+                Point? point = _context.Points.Find(id);
                 if (point == null)
                 {
                     throw new Exception("Verifique, no existen dispositivos asociados");
                 }
-                using (var httpClient = new HttpClient())
+                using (HttpClient? httpClient = new HttpClient())
                 {
-                    using var request = new HttpRequestMessage(new HttpMethod("GET"), $"https://api.mercadopago.com/point/integration-api/payment-intents/{paymentIntentId}/events");
+                    using HttpRequestMessage? request = new HttpRequestMessage(new HttpMethod("GET"), $"https://api.mercadopago.com/point/integration-api/payment-intents/{paymentIntentId}/events");
                     request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {point.Token}");
                     request.Headers.TryAddWithoutValidation("x-test-scope", "sandbox"); //borrar en produccion
-                    using var response = await httpClient.SendAsync(request);
+                    using HttpResponseMessage? response = await httpClient.SendAsync(request);
                     if (response.IsSuccessStatusCode)
                     {
                         try
@@ -216,7 +214,7 @@ namespace backaramis.Services
                 decimal Total = 0;
                 decimal PagoAplicado = 0;
 
-                foreach (var d in Recibo.ReciboDetalles)
+                foreach (ReciboDetalle? d in Recibo.ReciboDetalles)
                 {
                     Total += d.Monto;
                     d.Recibo = Recibo.Id;
@@ -224,13 +222,13 @@ namespace backaramis.Services
 
                 await _context.Recibos.AddAsync(Recibo);
 
-                foreach (var doc in ReciboInsert.Documents)
+                foreach (int doc in ReciboInsert.Documents)
                 {
                     //cambiamos de update el document a insertar un documento-recibo con el monto
-                    var docu = await _context.Documentos.FirstAsync(d => d.Id == doc);
-                    var q = from d in _context.DocumentoDetalles
-                            where d.Documento == doc
-                            select d.Unitario * d.Cantidad;
+                    Documento? docu = await _context.Documentos.FirstAsync(d => d.Id == doc);
+                    IQueryable<decimal>? q = from d in _context.DocumentoDetalles
+                                             where d.Documento == doc
+                                             select d.Unitario * d.Cantidad;
                     if (Total - PagoAplicado >= q.Sum() - docu.Pago)
                     {
                         docu.Pago = q.Sum();
@@ -261,13 +259,15 @@ namespace backaramis.Services
                 //Manejo del Documento
                 if (ReciboInsert.CodTipo != null)
                 {
-                    var documento = await _context.Documentos.FirstAsync(x => x.Id == ReciboInsert.Documents.First());
+                    Documento? documento = await _context.Documentos.FirstAsync(x => x.Id == ReciboInsert.Documents.First());
                     if (documento != null)
                     {
                         documento.Estado = _context.DocumentoEstados.FirstOrDefaultAsync(d => d.Detalle == "ENTREGADO").Result.Id;
                         //si viene de un presupuesto lo transforma en lo que sea
                         if (documento.Tipo == _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "PRESUPUESTO").Id)
+                        {
                             documento.Tipo = _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "REMITO").Id;
+                        }
                         //si viene de una orden la modifica y crea uno nuevo
 
                         if (documento.Tipo == _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "ORDEN DE SERVICIO").Id)
@@ -281,7 +281,7 @@ namespace backaramis.Services
                     _context.Documentos.Update(documento);
                 }
 
-                var result = await _context.SaveChangesAsync();
+                int result = await _context.SaveChangesAsync();
 
                 return result > 0 ? GetRecibo(Recibo.Id) : throw new Exception("No se pudo ingresar el Recibo");
 
@@ -338,10 +338,10 @@ namespace backaramis.Services
                         Letra = row["Letra"].ToString(),
                         Nombre = row["Nombre"].ToString(),
                         Cliente = (long)row["Cliente"],
-                        Numero = (int)row["Numero"],
+                        Numero =  row["Numero"].ToString(),
                         Observaciones = row["Observaciones"].ToString(),
                         Operador = row["Operador"].ToString(),
-                        Pos = (int)row["Pos"],
+                        Pos = row["Pos"].ToString(),
                         CodTipo = (int)row["CodTipo"],
                         Tipo = row["Tipo"].ToString(),
                         Total = (decimal)row["Total"],

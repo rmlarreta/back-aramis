@@ -1,6 +1,6 @@
 ﻿namespace backaramis.Modelsdtos.Recibos
 {
-    
+
     public class PaymentIntentResponeDto
     {
         public AddionalInfo? additional_info { get; set; }

@@ -16,7 +16,7 @@
         public decimal Precio { get; set; }
         public bool Servicio { get; set; }
         //para editar
-        public decimal Cantidad { get; set; } = 1; 
+        public decimal Cantidad { get; set; } = 1;
 
     }
 }

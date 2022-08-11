@@ -31,12 +31,12 @@ namespace backaramis.Helpers
             CreateMap<Recibo, ReciboInsertDto>().ReverseMap();
             CreateMap<Recibo, ReciboDto>().ReverseMap();
 
-            CreateMap<ReciboDetalle, ReciboDetalleInsertDto>().ReverseMap();          
+            CreateMap<ReciboDetalle, ReciboDetalleInsertDto>().ReverseMap();
             CreateMap<ReciboDetalle, ReciboDetallDto>().ReverseMap();
 
             CreateMap<Cliente, ClienteDto>().ReverseMap();
             CreateMap<Cliente, ClienteInsert>().ReverseMap();
-             
+
         }
     }
 }

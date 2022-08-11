@@ -7,7 +7,7 @@
         void Add(TEntity data);
         void Add(List<TEntity> data);
         bool Delete(long id);
-        bool Delete(int id); 
+        bool Delete(int id);
         void Update(List<TEntity> data);
 
     }

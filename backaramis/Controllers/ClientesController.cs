@@ -48,8 +48,8 @@ namespace backaramis.Controllers
             {
                 List<Cliente>? clientes = _clienteGenService.Get();
                 //List<ClienteDto> data = new();
-                var data = _mapper.Map<List<Cliente>, List<ClienteDto>>(clientes);
-               
+                List<ClienteDto>? data = _mapper.Map<List<Cliente>, List<ClienteDto>>(clientes);
+
                 return Ok(data);
             }
             catch (Exception ex)
@@ -82,7 +82,7 @@ namespace backaramis.Controllers
         [HttpPatch("UpdateCLiente")]
         public IActionResult UpdateCLiente([FromBody] List<ClienteDto> model)
         {
-            var cliente = _mapper.Map<List<ClienteDto>,List<Cliente>>(model);
+            List<Cliente>? cliente = _mapper.Map<List<ClienteDto>, List<Cliente>>(model);
             try
             {
                 // create user

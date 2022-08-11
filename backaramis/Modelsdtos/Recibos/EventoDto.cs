@@ -2,8 +2,8 @@
 {
     public class EventoDto
     {
-      public List<Evento> events { get; set;}   
-        
+        public List<Evento> events { get; set; }
+
     }
 
     public class Evento
@@ -12,5 +12,5 @@
         public string status { get; set; }
         public string created_on { get; set; }
     }
-    
+
 }

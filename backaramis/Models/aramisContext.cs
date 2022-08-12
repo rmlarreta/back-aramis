@@ -1,4 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace backaramis.Models
 {
@@ -133,10 +136,6 @@ namespace backaramis.Models
             modelBuilder.Entity<Documento>(entity =>
             {
                 entity.ToTable("Documento");
-
-                entity.Property(e => e.Cai)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
 
                 entity.Property(e => e.Creado).HasColumnType("datetime");
 
@@ -383,9 +382,26 @@ namespace backaramis.Models
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
+                entity.Property(e => e.Fantasia)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Iibb)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("IIBB");
+
+                entity.Property(e => e.InicioActividades)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.Lote).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.Razon)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ResponsabilidadEmpresa)
                     .HasMaxLength(50)
                     .IsUnicode(false);
             });

@@ -6,6 +6,7 @@
         //HEADER
         //LOGO
         public int CodTipo { get; set; }
+        public int CodAut { get; set; }
         public string? Letra { get; set; }
         public string? Tipo { get; set; }
         public string Pos { get; set; }
@@ -13,7 +14,7 @@
         public DateTime Fecha { get; set; }
         public int NumeroInt { get; set; }  
         public int PosInt { get; set; }  
-       
+        public DateTime Vence { get; set; }
         //EMPRESA
         public string Razon { get; set; }
         public string CuitEmpresa { get; set; }

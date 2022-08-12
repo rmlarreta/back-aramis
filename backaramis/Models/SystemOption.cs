@@ -1,4 +1,7 @@
-﻿namespace backaramis.Models
+﻿using System;
+using System.Collections.Generic;
+
+namespace backaramis.Models
 {
     public partial class SystemOption
     {
@@ -9,7 +12,11 @@
         public int O { get; set; }
         public string Cuit { get; set; } = null!;
         public string Razon { get; set; } = null!;
+        public string Fantasia { get; set; } = null!;
+        public string Iibb { get; set; } = null!;
         public string Domicilio { get; set; } = null!;
+        public string InicioActividades { get; set; } = null!;
+        public string ResponsabilidadEmpresa { get; set; } = null!;
         public byte[]? Logo { get; set; }
         public string? Contacto { get; set; }
         public bool Produccion { get; set; }

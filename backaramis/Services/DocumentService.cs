@@ -87,7 +87,9 @@ namespace backaramis.Services
                         ResponsabilidadCliente = row["ResponsabilidadCliente"].ToString(),
                         EnLetras = row["EnLetras"].ToString(),
                         NumeroInt = (int)row["NumeroInt"],
-                        PosInt = (int)row["PosInt"]
+                        PosInt = (int)row["PosInt"],
+                        CodAut=(int)row["CodAut"],
+                        Vence=(DateTime)row["Vence"]
                     });
                 }
 
@@ -210,7 +212,7 @@ namespace backaramis.Services
             var stream = new MemoryStream();
             var QrJsonModel = new QrJson
             {
-                CodAut = 0,
+                CodAut = 0,// remito.DocumentsDto.First().CodAuto
                 Ctz = 1,
                 Cuit = remito.DocumentsDto.First().CuitEmpresa.Replace("-", ""),
                 Fecha = remito.DocumentsDto.First().Fecha.ToString("yyyy-MM-dd"),
@@ -440,28 +442,27 @@ namespace backaramis.Services
                                        {
                                            grid.VerticalSpacing(2); 
                                            grid.HorizontalSpacing(2);
-                                           grid.AlignCenter();
+                                           grid.AlignLeft();
                                            grid.Columns(12); // 12 by default
 
-                                           grid.Item(4).Height(100).Image(qrCodeAsBitmapByteArr,ImageScaling.FitHeight);
-                                           grid.Item(4).Background(Colors.Blue.Lighten3).Height(50).Text("AFip");  
-                                           grid.Item(4).Background(Colors.Teal.Lighten1).Height(50).Text(t =>
-                                           {
-                                               t.AlignRight();
-                                               t.Span("CAE");
-                                           }                                          
-                                           );
-
-                                           grid.Item(6).Background(Colors.Teal.Lighten2).Height(20).Text(t =>
-                                           {
-                                               t.AlignLeft();
-                                               t.Span("desarrollado por");
-                                           });
-                                           grid.Item(6).Background(Colors.Teal.Lighten3).Height(20).Text(t =>
-                                           {
-                                               t.AlignCenter();
-                                               t.Span("page ");
-                                           }); ; 
+                                           //grid.Item(2).Height(100).Image(qrCodeAsBitmapByteArr, ImageScaling.FitArea);
+                                           //grid.Item(5).Height(80).Image("Images/Afip.jpg", ImageScaling.FitArea); 
+                                           //grid.Item(5).Height(60).AlignRight().Text(t =>
+                                           //{ 
+                                           //    t.DefaultTextStyle(t => t.FontSize(12));
+                                           //    t.DefaultTextStyle(x => x.Bold()); 
+                                           //    t.Line("CAE Nº: " + remito.DocumentsDto.First().CodAut.ToString());
+                                           //    t.Line("Fecha de Vto de CAE: " + remito.DocumentsDto.First().Vence.ToShortDateString());
+                                           //}
+                                           //);
+                                              grid.Item(6).Height(20).AlignLeft().DefaultTextStyle(f=>f.FontSize(10)).Text("2022 © Desarrollado por Aramis Sistemas"); 
+                                              grid.Item(6).Height(20).AlignCenter().DefaultTextStyle(f => f.FontSize(10)).Text(t =>
+                                              { 
+                                                   t.Span("Página ");
+                                                   t.CurrentPageNumber();
+                                                   t.Span(" de ");
+                                                   t.TotalPages(); 
+                                              }); 
                                        });
                                });
                         });

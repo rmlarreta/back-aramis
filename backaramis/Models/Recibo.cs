@@ -1,4 +1,7 @@
-﻿namespace backaramis.Models
+﻿using System;
+using System.Collections.Generic;
+
+namespace backaramis.Models
 {
     public partial class Recibo
     {

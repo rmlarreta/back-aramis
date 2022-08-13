@@ -225,11 +225,11 @@ namespace backaramis.Controllers
             }
         }
 
-        [HttpGet("ReportRemito/{id}")] 
+        [HttpGet("Report/{id}")] 
         [AllowAnonymous]
-        public IActionResult ReportRemito(int id)
+        public IActionResult Report(int id)
         {
-           return _documentService.ReporteRemito(id);
+           return _documentService.Report(id);
         }
     }
 }

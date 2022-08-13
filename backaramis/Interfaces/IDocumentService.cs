@@ -10,6 +10,6 @@ namespace backaramis.Interfaces
         void InsertDocument(string Operador);
         Documento InsertOrden(long Id);
         Documento UpdateClienteDocument(long Id, long cliente);
-        FileStreamResult ReporteRemito(int id);
+        FileStreamResult Report(int id);
     }
 }

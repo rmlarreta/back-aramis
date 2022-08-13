@@ -201,11 +201,11 @@ namespace backaramis.Services
             {
                 throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
-        }
-        public FileStreamResult ReporteRemito(int id)
+        } 
+        public FileStreamResult Report(int id)
         {
-            var remito = GetDocuments(id);
-            if (remito == null)
+            var documento = GetDocuments(id);
+            if (documento == null)
             {
                 return null;
             }
@@ -214,22 +214,22 @@ namespace backaramis.Services
             {
                 CodAut = 0,// remito.DocumentsDto.First().CodAuto
                 Ctz = 1,
-                Cuit = remito.DocumentsDto.First().CuitEmpresa.Replace("-", ""),
-                Fecha = remito.DocumentsDto.First().Fecha.ToString("yyyy-MM-dd"),
-                Importe = remito.DocumentsDto.First().Total,
+                Cuit = documento.DocumentsDto.First().CuitEmpresa.Replace("-", ""),
+                Fecha = documento.DocumentsDto.First().Fecha.ToString("yyyy-MM-dd"),
+                Importe = documento.DocumentsDto.First().Total,
                 Moneda = "PES",
-                NroCmp = remito.DocumentsDto.First().NumeroInt,
-                NroDocRec = remito.DocumentsDto.First().Cuit,
-                PtoVenta = remito.DocumentsDto.First().PosInt,
-                TipoCmp = 88,
+                NroCmp = documento.DocumentsDto.First().NumeroInt,
+                NroDocRec = documento.DocumentsDto.First().Cuit,
+                PtoVenta = documento.DocumentsDto.First().PosInt,
+                TipoCmp = 88, //de acuerdo al tipo de comprobante
                 TipoCodAut = "O",
-                TipoDocRec = remito.DocumentsDto.First().Cuit == 0 ? 99 : 86,
+                TipoDocRec = documento.DocumentsDto.First().Cuit == 0 ? 99 : 86,
                 Ver=1
             };
             var QrString = JsonSerializer.Serialize(QrJsonModel);            
             var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(QrString);
-            QRCodeGenerator qrGenerator = new();
-            QRCodeData qrCodeData = qrGenerator.CreateQrCode("Remito"+ System.Convert.ToBase64String(plainTextBytes), QRCodeGenerator.ECCLevel.Q);
+            QRCodeGenerator qrGenerator = new(); 
+            QRCodeData qrCodeData = qrGenerator.CreateQrCode("https://www.afip.gob.ar/fe/qr/?p=" + Convert.ToBase64String(plainTextBytes), QRCodeGenerator.ECCLevel.Q);
             BitmapByteQRCode qrCode = new(qrCodeData);
             byte[] qrCodeAsBitmapByteArr = qrCode.GetGraphic(20); 
               
@@ -274,7 +274,7 @@ namespace backaramis.Services
                                     .PaddingVertical(1, Unit.Millimetre)
                                     .Text(text =>
                                     {
-                                        text.Span(remito.DocumentsDto.First().Letra);
+                                        text.Span(documento.DocumentsDto.First().Letra);
                                     });
                                         grid.Item()
                                        .DefaultTextStyle(x => x.FontSize(10))
@@ -282,7 +282,7 @@ namespace backaramis.Services
                                        .PaddingBottom(3, Unit.Millimetre)
                                        .Text(text =>
                                        {
-                                           text.Span(remito.DocumentsDto.First().Tipo);
+                                           text.Span(documento.DocumentsDto.First().Tipo);
                                        });
                                     });
 
@@ -299,20 +299,20 @@ namespace backaramis.Services
                                           .Text(text =>
                                           {
                                               text.AlignCenter();
-                                              text.Span(remito.DocumentsDto.First().Tipo);
+                                              text.Span(documento.DocumentsDto.First().Tipo);
                                           });
                                          grid.Item()
                                           .Text(text =>
                                           {
                                               text.AlignRight();
-                                              text.Span("\n FC: " + remito.DocumentsDto.First().Pos + " - " + remito.DocumentsDto.First().Numero);
+                                              text.Span("\n FC: " + documento.DocumentsDto.First().Pos + " - " + documento.DocumentsDto.First().Numero);
                                           });
                                          grid.Item()
                                          .Text(text =>
                                          {
                                              text.DefaultTextStyle(f => f.NormalWeight());
                                              text.AlignRight();
-                                             text.Span("FECHA: " + remito.DocumentsDto.First().Fecha.ToShortDateString());
+                                             text.Span("FECHA: " + documento.DocumentsDto.First().Fecha.ToShortDateString());
                                          });
                                      });
 
@@ -323,19 +323,19 @@ namespace backaramis.Services
                                     .PaddingVertical(3, Unit.Millimetre)
                                     .DefaultTextStyle(f => f.FontSize(10))
                                     .DefaultTextStyle(t => t.FontColor("#1f66ff"))
-                                    .Text("Razón Social: " + remito.DocumentsDto.First().Razon
-                                    + "\n" + remito.DocumentsDto.First().Fantasia
-                                    + "\n" + remito.DocumentsDto.First().DomicilioEmpresa
-                                    + "\n" + remito.DocumentsDto.First().ResponsabilidadEmpresa
+                                    .Text("Razón Social: " + documento.DocumentsDto.First().Razon
+                                    + "\n" + documento.DocumentsDto.First().Fantasia
+                                    + "\n" + documento.DocumentsDto.First().DomicilioEmpresa
+                                    + "\n" + documento.DocumentsDto.First().ResponsabilidadEmpresa
                                     );
 
                                     row.RelativeItem(1)
                                    .PaddingVertical(3, Unit.Millimetre)
                                    .DefaultTextStyle(f => f.FontSize(10))
                                    .DefaultTextStyle(t => t.FontColor("#1f66ff"))
-                                   .Text("Cuit: " + remito.DocumentsDto.First().CuitEmpresa
-                                   + "\n" + "IIBB: " + remito.DocumentsDto.First().IIBB
-                                   + "\n" + "I. Actividades: " + remito.DocumentsDto.First().InicioActividades
+                                   .Text("Cuit: " + documento.DocumentsDto.First().CuitEmpresa
+                                   + "\n" + "IIBB: " + documento.DocumentsDto.First().IIBB
+                                   + "\n" + "I. Actividades: " + documento.DocumentsDto.First().InicioActividades
                                    );
                                 });
 
@@ -346,8 +346,8 @@ namespace backaramis.Services
                                    .BorderTop(1, Unit.Millimetre).BorderColor("#858796")
                                    .PaddingVertical(2, Unit.Millimetre)
                                    .DefaultTextStyle(t => t.SemiBold())
-                                   .Text("Cliente: " + remito.DocumentsDto.First().Nombre
-                                   + "\n" + remito.DocumentsDto.First().DomicilioCliente
+                                   .Text("Cliente: " + documento.DocumentsDto.First().Nombre
+                                   + "\n" + documento.DocumentsDto.First().DomicilioCliente
                                    );
 
                                     row.RelativeItem(1)
@@ -355,8 +355,8 @@ namespace backaramis.Services
                                     .BorderTop(1, Unit.Millimetre).BorderColor("#858796")
                                     .PaddingVertical(2, Unit.Millimetre)
                                     .DefaultTextStyle(t => t.SemiBold())
-                                    .Text("Cuit: " + remito.DocumentsDto.First().Cuit
-                                    + "\n" + "RESPONSABLE " + remito.DocumentsDto.First().ResponsabilidadCliente
+                                    .Text("Cuit: " + documento.DocumentsDto.First().Cuit
+                                    + "\n" + "RESPONSABLE " + documento.DocumentsDto.First().ResponsabilidadCliente
                                     );
                                 });
                             });
@@ -394,7 +394,7 @@ namespace backaramis.Services
                                      .Background("#9ca4df")
                                    .Text("Sub Total");
 
-                                    foreach (var c in remito.DocumentsDetallDto)
+                                    foreach (var c in documento.DocumentsDetallDto)
                                     {
                                         table.Cell().Padding(0).DefaultTextStyle(x => x.FontSize(8)).DefaultTextStyle(x => x.NormalWeight()).AlignCenter().Text(c.Codigo);
                                         table.Cell().Padding(0).DefaultTextStyle(x => x.FontSize(8)).DefaultTextStyle(x => x.NormalWeight()).AlignLeft().Text(c.Detalle);
@@ -414,17 +414,17 @@ namespace backaramis.Services
                                        r.RelativeItem()
                                       .DefaultTextStyle(t => t.FontSize(10))
                                       .DefaultTextStyle(x => x.Bold())
-                                      .Text("Neto Gravado: $ " + Math.Round(remito.DocumentsDto.First().Neto, 2)
-                                      + "\n" + "Excento: $ " + Math.Round(remito.DocumentsDto.First().Excento, 2)
-                                      + "\n" + "IVA 10.5%: $ " + Math.Round(remito.DocumentsDto.First().Iva10, 2)
-                                      + "\n" + "IVA 21.0%: $ " + Math.Round(remito.DocumentsDto.First().Iva21, 2)
-                                      + "\n" + "Imp.Internos: $ " + Math.Round(remito.DocumentsDto.First().Internos, 2));
+                                      .Text("Neto Gravado: $ " + Math.Round(documento.DocumentsDto.First().Neto, 2)
+                                      + "\n" + "Excento: $ " + Math.Round(documento.DocumentsDto.First().Excento, 2)
+                                      + "\n" + "IVA 10.5%: $ " + Math.Round(documento.DocumentsDto.First().Iva10, 2)
+                                      + "\n" + "IVA 21.0%: $ " + Math.Round(documento.DocumentsDto.First().Iva21, 2)
+                                      + "\n" + "Imp.Internos: $ " + Math.Round(documento.DocumentsDto.First().Internos, 2));
                                        r.RelativeItem()
                                       .DefaultTextStyle(t => t.FontSize(8))
                                       .DefaultTextStyle(x => x.Bold())
                                           .Text(text =>
                                           {
-                                              text.Span("\n" + "\n" + "\n" + "Ud. fue atendido por " + remito.DocumentsDto.First().Operador);
+                                              text.Span("\n" + "\n" + "\n" + "Ud. fue atendido por " + documento.DocumentsDto.First().Operador);
                                           });
                                        r.RelativeItem(2)
                                       .DefaultTextStyle(t => t.FontSize(12))
@@ -432,8 +432,8 @@ namespace backaramis.Services
                                       .AlignRight()
                                       .Text(text =>
                                         {
-                                            text.Line("TOTAL $: " + Math.Round(remito.DocumentsDto.First().Total, 2));
-                                            text.Line(remito.DocumentsDto.First().EnLetras).FontSize(8);
+                                            text.Line("TOTAL $: " + Math.Round(documento.DocumentsDto.First().Total, 2));
+                                            text.Line(documento.DocumentsDto.First().EnLetras).FontSize(8);
                                         });
                                    });
                                    c.Item()

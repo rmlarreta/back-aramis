@@ -118,6 +118,8 @@ ipch/
 *.vsp
 *.vspx
 *.sap
+*.key
+*.p12
 
 # Visual Studio Trace Files
 *.e2e

@@ -3,7 +3,6 @@ using backaramis.Helpers;
 using backaramis.Interfaces;
 using backaramis.Models;
 using backaramis.Services;
-using backmaree.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -15,7 +14,7 @@ WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-IServiceCollection serviceCollection = builder.Services.AddDbContext<aramisContext>(Options => Options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+IServiceCollection serviceCollection = builder.Services.AddDbContext<AramisContext>(Options => Options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddCors();
 //#region Binder
 
@@ -34,7 +33,7 @@ builder.Services.Configure<AppSettings>(appSettingsSection);
 
 // configure jwt authentication
 AppSettings? appSettings = appSettingsSection.Get<AppSettings>();
-byte[]? key = Encoding.ASCII.GetBytes(appSettings.Secret);
+byte[]? key = Encoding.ASCII.GetBytes(appSettings.Secret!);
 builder.Services.AddAuthentication(x =>
 {
     x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -47,7 +46,7 @@ builder.Services.AddAuthentication(x =>
         OnTokenValidated = context =>
         {
             IUserService? userService = context.HttpContext.RequestServices.GetRequiredService<IUserService>();
-            int userId = int.Parse(context.Principal.Identity.Name);
+            int userId = int.Parse(context.Principal!.Identity!.Name!);
             User? user = userService.GetById(userId);
             if (user == null)
             {

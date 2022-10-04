@@ -15,6 +15,7 @@ namespace backaramis.Controllers
         private readonly IDocumentService _documentService;
         private readonly IGenericService<DocumentoDetalle> _genericDelService;
         private readonly IGenericService<Documento> _genericDocService;
+        private readonly IFiscalService _fiscalService;
         private readonly ILoggService _loggService;
         private readonly IMapper _mapper;
         private readonly SecurityService _securityService;
@@ -23,6 +24,7 @@ namespace backaramis.Controllers
             IDocumentService documentService,
             IGenericService<DocumentoDetalle> genericDelService,
             IGenericService<Documento> genericDocService,
+            IFiscalService fiscalService,
             ILoggService loggService,
             IMapper mapper,
             SecurityService securityService
@@ -31,6 +33,7 @@ namespace backaramis.Controllers
             _documentService = documentService;
             _genericDelService = genericDelService;
             _genericDocService = genericDocService;
+            _fiscalService = fiscalService;
             _loggService = loggService;
             _mapper = mapper;
             _securityService = securityService;
@@ -225,11 +228,29 @@ namespace backaramis.Controllers
             }
         }
 
-        [HttpGet("Report/{id}")] 
-        [AllowAnonymous]
+        [HttpGet("Report/{id}")]  
         public IActionResult Report(int id)
         {
-           return _documentService.Report(id);
+            return _documentService.Report(id);
+        }
+
+        [AllowAnonymous]
+        [HttpPost("FacturaRemito")]
+        public IActionResult FacturaRemito([FromBody] Documento model)
+
+        {
+            try
+            {
+                var data = _fiscalService.FacturaRemito(model); 
+             //   _loggService.Log($"InsertDetall {model.First().Detalle} en {model.First().Documento}", "Operaciones", "Update", _userName);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+            //    _loggService.Log($"Error InsertDetall {model.First().Detalle} en {model.First().Documento}", "Operaciones", "Update", _userName);
+                // return error message if there was an exception
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

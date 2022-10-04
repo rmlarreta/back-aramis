@@ -5,14 +5,14 @@ namespace backaramis.Modelsdtos.Users
     public class ChangePassword
     {
         [Required]
-        public string Username { get; set; }
+        public string? Username { get; set; }
 
         [Required]
-        public string Password { get; set; }
+        public string? Password { get; set; }
 
         [Required]
         [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres")]
-        public string NPassword { get; set; }
+        public string? NPassword { get; set; }
 
 
     }

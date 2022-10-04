@@ -7,6 +7,7 @@ namespace backaramis.Models
     {
         public Documento()
         {
+            DocumentoDetalles = new HashSet<DocumentoDetalle>();
             DocumentoRecibos = new HashSet<DocumentoRecibo>();
         }
 
@@ -23,10 +24,11 @@ namespace backaramis.Models
         public DateTime Creado { get; set; }
         public int Estado { get; set; }
         public decimal Pago { get; set; }
-        public int? CodAut { get; set; }
+        public string? CodAut { get; set; }
 
         public virtual DocumentoEstado EstadoNavigation { get; set; } = null!;
         public virtual DocumentoTipo TipoNavigation { get; set; } = null!;
+        public virtual ICollection<DocumentoDetalle> DocumentoDetalles { get; set; }
         public virtual ICollection<DocumentoRecibo> DocumentoRecibos { get; set; }
     }
 }

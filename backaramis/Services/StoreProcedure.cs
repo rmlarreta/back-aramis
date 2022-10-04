@@ -14,7 +14,7 @@ namespace backaramis.Services
             _connectionString = _config.GetConnectionString("DefaultConnection");
         }
 
-        public DataTable SpWhithDataSet(string Sp, List<SqlParameter> Param = null)
+        public DataTable SpWhithDataSet(string Sp, List<SqlParameter>? Param = null!)
         {
             DataTable Ds = new();
             SqlConnection conn = new(_connectionString);
@@ -45,7 +45,7 @@ namespace backaramis.Services
             return Ds;
         }
 
-        public bool ExecuteNonQuery(string Sp, List<SqlParameter> Param = null)
+        public bool ExecuteNonQuery(string Sp, List<SqlParameter>? Param = null)
         {
             SqlConnection conn = new(_connectionString);
             if (conn.State == ConnectionState.Closed)
@@ -74,7 +74,7 @@ namespace backaramis.Services
             return true;
         }
 
-        public object ExecuteScalar(string Sp, List<SqlParameter> Param = null)
+        public object ExecuteScalar(string Sp, List<SqlParameter>? Param = null!)
         {
             SqlConnection conn = new(_connectionString);
             if (conn.State == ConnectionState.Closed)
@@ -103,7 +103,7 @@ namespace backaramis.Services
             return Response;
         }
 
-        public DataSet SpWhithDataSetPure(string Sp, List<SqlParameter> Param = null)
+        public DataSet SpWhithDataSetPure(string Sp, List<SqlParameter>? Param = null!)
         {
             DataSet Ds = new();
             SqlConnection conn = new(_connectionString);

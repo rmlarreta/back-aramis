@@ -7,9 +7,9 @@ namespace backaramis.Services
 {
     public class LoggService : ILoggService
     {
-        private readonly aramisContext _context;
+        private readonly AramisContext _context;
         private readonly IMapper _mapper;
-        public LoggService(IMapper mapper, aramisContext context)
+        public LoggService(IMapper mapper, AramisContext context)
         {
             _context = context;
             _mapper = mapper;

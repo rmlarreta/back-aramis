@@ -1,8 +1,0 @@
-version: '3.4'
-
-services:
-  backaramis:
-    image: ${DOCKER_REGISTRY-}backaramis
-    build:
-      context: .
-      dockerfile: Dockerfile

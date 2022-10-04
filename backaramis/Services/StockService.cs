@@ -2,17 +2,15 @@
 using backaramis.Models;
 using backaramis.Modelsdtos.Stock;
 using System.Data;
-namespace backmaree.Services
+namespace backaramis.Services
 {
     public class StockService : IStockService
     {
-        private readonly IStoreProcedure _storeProcedure;
-        private readonly aramisContext _context;
+        private readonly IStoreProcedure _storeProcedure; 
 
-        public StockService(IStoreProcedure storeProcedure, aramisContext context)
+        public StockService(IStoreProcedure storeProcedure)
         {
-            _storeProcedure = storeProcedure;
-            _context = context;
+            _storeProcedure = storeProcedure; 
         }
 
         public IEnumerable<ProductoDto> GetProductos()
@@ -28,10 +26,10 @@ namespace backmaree.Services
                     productos.Add(new ProductoDto()
                     {
                         Id = (long)row["Id"],
-                        Codigo = row["Codigo"].ToString(),
-                        Detalle = row["Detalle"].ToString(),
+                        Codigo = row["Codigo"].ToString()!,
+                        Detalle = row["Detalle"].ToString()!,
                         Rubro = (int)row["Rubro"],
-                        RubroStr = row["RubroStr"].ToString(),
+                        RubroStr = row["RubroStr"].ToString()!,
                         Costo = (decimal)row["Costo"],
                         Iva = (int)row["Iva"],
                         IvaDec = (decimal)row["IvaDec"],

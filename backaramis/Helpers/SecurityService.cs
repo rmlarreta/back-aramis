@@ -8,7 +8,7 @@ namespace backaramis.Helpers
         private readonly ClaimsPrincipal _cp;
         public SecurityService(IHttpContextAccessor haccess)
         {
-            _hcontext = haccess.HttpContext;
+            _hcontext = haccess.HttpContext!;
             _cp = _hcontext.User;
         }
 
@@ -17,7 +17,7 @@ namespace backaramis.Helpers
             string? user = ExtensionMethods.GetUserName(_cp);
             if (user == null)
             {
-                return null;
+                return null!;
             }
 
             return user;

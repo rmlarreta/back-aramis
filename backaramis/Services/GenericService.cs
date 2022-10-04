@@ -6,10 +6,10 @@ namespace backaramis.Services
 {
     public class GenericService<TEntity> : IGenericService<TEntity> where TEntity : class
     {
-        private readonly aramisContext _context;
+        private readonly AramisContext _context;
         private readonly DbSet<TEntity> _dbSet;
 
-        public GenericService(aramisContext context)
+        public GenericService(AramisContext context)
         {
             try
             {
@@ -104,7 +104,7 @@ namespace backaramis.Services
         {
             try
             {
-                return _dbSet.Find(id);
+                return _dbSet.Find(id)!;
             }
             catch (Exception ex)
             {

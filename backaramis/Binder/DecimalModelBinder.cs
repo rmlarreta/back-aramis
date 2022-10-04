@@ -11,15 +11,9 @@ namespace backaramis.Binder
             //Primero obtenemos el separador de miles para procesar la información aqui no nos interesa
             //el separador decimal porque a este es ya core y eso lo maneja perfecto el framework
             string? separadormiles = valueProviderResult.Culture.NumberFormat.CurrencyGroupSeparator;
-
-            //Si es nulo pues finaliza la clase sin hacer más
-            if (valueProviderResult == null)
-            {
-                return Task.CompletedTask;
-            }
-
+             
             //obtenmos el valor del modelo 
-            string value = valueProviderResult.FirstValue;
+            string value = valueProviderResult.FirstValue!;
 
             //si no hay valor finaliza si hacer nada
             if (string.IsNullOrEmpty(value))

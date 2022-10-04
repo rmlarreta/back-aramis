@@ -49,23 +49,23 @@ namespace backaramis.Controllers
         [HttpPost("authenticate")]
         public IActionResult Authenticate([FromForm] Login model)
         {
-            User? user = _userService.Authenticate(model.Username, model.Password);
+            User? user = _userService.Authenticate(model.Username!, model.Password!);
 
             if (user == null)
             {
-                _loggService.Log("Logueo Incorrecto", "Users", "Loguin", model.Username);
+                _loggService.Log("Logueo Incorrecto", "Users", "Loguin", model.Username!);
                 return BadRequest(new { message = "Logueo Incorrecto" });
             }
 
             if (user.EndOfLife < DateTime.Now.AddHours(-3))
             {
-                _loggService.Log("Logueo Incorrecto. Clave Vencida", "Users", "Loguin", model.Username);
+                _loggService.Log("Logueo Incorrecto. Clave Vencida", "Users", "Loguin", model.Username!);
                 return BadRequest(new { message = user.FirstName + " debes renovar tus datos" });
             }
 
-            JwtSecurityTokenHandler? tokenHandler = new JwtSecurityTokenHandler();
-            byte[]? key = Encoding.ASCII.GetBytes(_appSettings.Secret);
-            SecurityTokenDescriptor? tokenDescriptor = new SecurityTokenDescriptor
+            JwtSecurityTokenHandler? tokenHandler = new();
+            byte[]? key = Encoding.ASCII.GetBytes(_appSettings.Secret!);
+            SecurityTokenDescriptor? tokenDescriptor = new()
             {
                 Subject = new ClaimsIdentity(new Claim[]
                 {
@@ -79,7 +79,7 @@ namespace backaramis.Controllers
             };
             SecurityToken? token = tokenHandler.CreateToken(tokenDescriptor);
             string? tokenString = tokenHandler.WriteToken(token);
-            _loggService.Log("Logueo Correcto", "Users", "Loguin", model.Username);
+            _loggService.Log("Logueo Correcto", "Users", "Loguin", model.Username!);
             // return basic user info and authentication token
             return Ok(new
             {
@@ -102,13 +102,13 @@ namespace backaramis.Controllers
             try
             {
                 // create user
-                _userService.Create(user, model.Password);
-                _loggService.Log("Usuario Creado", "Users", "Add", model.Username);
+                _userService.Create(user, model.Password!);
+                _loggService.Log("Usuario Creado", "Users", "Add", model.Username!);
                 return Ok("Solicite la confirmación de su nuevo usuario");
             }
             catch (Exception ex)
             {
-                _loggService.Log("Error tratando de crear usuario", "Users", "Add", model.Username);
+                _loggService.Log("Error tratando de crear usuario", "Users", "Add", model.Username!);
                 // return error message if there was an exception
                 return BadRequest(new { message = ex.Message });
             }
@@ -120,33 +120,33 @@ namespace backaramis.Controllers
         {
             if (!ModelState.IsValid)
             {
-                _loggService.Log("Logueo y cambio Pass Incorrecto", "Users", "Loguin", model.Username);
+                _loggService.Log("Logueo y cambio Pass Incorrecto", "Users", "Loguin", model.Username!);
                 return BadRequest(new { message = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
             }
 
             if (model.Password == model.NPassword)
             {
-                _loggService.Log("Repite Pass", "Users", "Loguin", model.Username);
+                _loggService.Log("Repite Pass", "Users", "Loguin", model.Username!);
                 return BadRequest(new { message = "La contraseña no puede ser igual a la anterior" });
             }
 
-            User? user = _userService.ChangePassword(model.Username, model.Password, model.NPassword);
+            User? user = _userService.ChangePassword(model.Username!, model.Password!, model.NPassword!);
 
             if (user == null)
             {
-                _loggService.Log("Logueo y cambio Pass Incorrecto", "Users", "Loguin", model.Username);
+                _loggService.Log("Logueo y cambio Pass Incorrecto", "Users", "Loguin", model.Username!);
                 return BadRequest(new { message = "Logueo Incorrecto" });
             }
 
             if (user.EndOfLife < DateTime.Now.AddHours(-3))
             {
-                _loggService.Log("Logueo y cambio Pass Incorrecto. Clave Vencida", "Users", "Loguin", model.Username);
+                _loggService.Log("Logueo y cambio Pass Incorrecto. Clave Vencida", "Users", "Loguin", model.Username!);
                 return BadRequest(new { message = user.FirstName + " debes renovar tus datos" });
             }
 
-            JwtSecurityTokenHandler? tokenHandler = new JwtSecurityTokenHandler();
-            byte[]? key = Encoding.ASCII.GetBytes(_appSettings.Secret);
-            SecurityTokenDescriptor? tokenDescriptor = new SecurityTokenDescriptor
+            JwtSecurityTokenHandler? tokenHandler = new();
+            byte[]? key = Encoding.ASCII.GetBytes(_appSettings.Secret!);
+            SecurityTokenDescriptor? tokenDescriptor = new()
             {
                 Subject = new ClaimsIdentity(new Claim[]
                 {
@@ -160,7 +160,7 @@ namespace backaramis.Controllers
             };
             SecurityToken? token = tokenHandler.CreateToken(tokenDescriptor);
             string? tokenString = tokenHandler.WriteToken(token);
-            _loggService.Log("Logueo y Cambio Pass Correcto", "Users", "Loguin", model.Username);
+            _loggService.Log("Logueo y Cambio Pass Correcto", "Users", "Loguin", model.Username!);
             // return basic user info and authentication token
             return Ok(new
             {
@@ -209,7 +209,7 @@ namespace backaramis.Controllers
                 User? user = _mapper.Map<User>(model);
                 if (string.IsNullOrWhiteSpace(model.Password) || model.Password == "undefined")
                 {
-                    _userService.Update(user);
+                    _userService.Update(user,null!);
                 }
                 else
                 {

@@ -11,7 +11,7 @@ namespace backaramis.Controllers
     [Authorize]
     [ApiController]
     [Route("[controller]")]
-    public class ClientesController : Controller
+    public class ClientesController :ControllerBase
     {
         private readonly IGenericService<Cliente> _clienteGenService;
         private readonly IGenericService<ClienteResponsabilidad> _resposGenService;
@@ -29,7 +29,7 @@ namespace backaramis.Controllers
             IMapper mapper,
             ILoggService loggService,
             SecurityService securityService
-            )
+            )  
         {
             _clienteGenService = clienteGenService;
             _resposGenService = resposGenService;
@@ -40,8 +40,8 @@ namespace backaramis.Controllers
             _securityService = securityService;
             _userName = _securityService.GetUserAuthenticated();
         }
-
-        [HttpGet("GetClientes")]
+        // TODO: ir sacando a las capas
+        [HttpGet("GetClientes")]  
         public IActionResult GetClientes()
         {
             try

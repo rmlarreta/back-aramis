@@ -3,25 +3,28 @@ using backaramis.Interfaces;
 using backaramis.Models;
 using backaramis.Modelsdtos.Documents;
 using backaramis.Modelsdtos.Recibos;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using backaramis.Helpers; 
 
 namespace backaramis.Services
 {
 
-    public class RecibosService : IRecibosService
+    public class RecibosService : IRecibosService 
     {
-        private readonly aramisContext _context;
-        private readonly IMapper _mapper;
-        private readonly IStoreProcedure _storeProcedure;
-        public RecibosService(aramisContext context, IMapper mapper, IStoreProcedure storeProcedure)
+        private readonly AramisContext _context;
+        private readonly IMapper _mapper; 
+        public RecibosService(AramisContext context, IMapper mapper)
         {
             _context = context;
-            _mapper = mapper;
-            _storeProcedure = storeProcedure;
+            _mapper = mapper; 
         }
         public async Task<PaymentIntentResponeDto> CreatePaymentIntent(PaymentIntentDto PaymentIntent, int id)
         {
@@ -33,9 +36,9 @@ namespace backaramis.Services
                 {
                     throw new Exception("Verifique, no existen dispositivos asociados");
                 }
-                using (HttpClient? httpClient = new HttpClient())
+                using (HttpClient? httpClient = new())
                 {
-                    using HttpRequestMessage? request = new HttpRequestMessage(new HttpMethod("POST"), $"https://api.mercadopago.com/point/integration-api/devices/{point.DeviceId}/payment-intents");
+                    using HttpRequestMessage? request = new(new HttpMethod("POST"), $"https://api.mercadopago.com/point/integration-api/devices/{point.DeviceId}/payment-intents");
                     request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {point.Token}");
                     request.Headers.TryAddWithoutValidation("x-test-scope", "sandbox"); //borrar en produccion
                     request.Content = JsonContent.Create(PaymentIntent);
@@ -46,7 +49,8 @@ namespace backaramis.Services
                     {
                         try
                         {
-                            return await response.Content.ReadFromJsonAsync<PaymentIntentResponeDto>();
+                            var result = await response.Content.ReadFromJsonAsync<PaymentIntentResponeDto>();
+                            return result!;
 
                         }
                         catch (NotSupportedException) // When content type is not valid
@@ -59,7 +63,7 @@ namespace backaramis.Services
                         }
                     }
                 }
-                return null;
+                return null!;
             }
 
             catch (Exception ex)
@@ -77,34 +81,32 @@ namespace backaramis.Services
                 {
                     throw new Exception("Verifique, no existen dispositivos asociados");
                 }
-                using (HttpClient? httpClient = new HttpClient())
+                using HttpClient? httpClient = new();
+                using HttpRequestMessage? request = new(new HttpMethod("GET"), $"https://api.mercadopago.com/point/integration-api/payment-intents/events?startDate={DateTime.Today:yyyy-MM-dd}&endDate={DateTime.Today:yyyy-MM-dd}");
+                request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {point.Token}");
+                request.Headers.TryAddWithoutValidation("x-test-scope", "sandbox"); //borrar en produccion
+                using HttpResponseMessage? response = await httpClient.SendAsync(request);
+                if (response.IsSuccessStatusCode)
                 {
-                    using HttpRequestMessage? request = new HttpRequestMessage(new HttpMethod("GET"), $"https://api.mercadopago.com/point/integration-api/payment-intents/events?startDate={DateTime.Today.ToString("yyyy-MM-dd")}&endDate={DateTime.Today.ToString("yyyy-MM-dd")}");
-                    request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {point.Token}");
-                    request.Headers.TryAddWithoutValidation("x-test-scope", "sandbox"); //borrar en produccion
-                    using HttpResponseMessage? response = await httpClient.SendAsync(request);
-                    if (response.IsSuccessStatusCode)
+                    try
                     {
-                        try
+                        EventoDto? events = await response.Content.ReadFromJsonAsync<EventoDto>();
+                        foreach (Evento? evento in events!.Events!)
                         {
-                            EventoDto? events = await response.Content.ReadFromJsonAsync<EventoDto>();
-                            foreach (Evento? evento in events.events)
+                            if (evento.Status == "OPEN")
                             {
-                                if (evento.status == "OPEN")
-                                {
-                                    await CancelPaymentIntent(evento.payment_intent_id, id);
-                                }
+                                await CancelPaymentIntent(evento.Payment_intent_id!, id);
                             }
+                        }
 
-                        }
-                        catch (NotSupportedException) // When content type is not valid
-                        {
-                            Console.WriteLine("The content type is not supported.");
-                        }
-                        catch (JsonException) // Invalid JSON
-                        {
-                            Console.WriteLine("Invalid JSON.");
-                        }
+                    }
+                    catch (NotSupportedException) // When content type is not valid
+                    {
+                        Console.WriteLine("The content type is not supported.");
+                    }
+                    catch (JsonException) // Invalid JSON
+                    {
+                        Console.WriteLine("Invalid JSON.");
                     }
                 }
             }
@@ -123,9 +125,9 @@ namespace backaramis.Services
                 {
                     throw new Exception("Verifique, no existen dispositivos asociados");
                 }
-                using (HttpClient? httpClient = new HttpClient())
+                using (HttpClient? httpClient = new())
                 {
-                    using HttpRequestMessage? request = new HttpRequestMessage(new HttpMethod("DELETE"), $"https://api.mercadopago.com/point/integration-api/devices/{point.DeviceId}/payment-intents/{paymentIntent}");
+                    using HttpRequestMessage? request = new(new HttpMethod("DELETE"), $"https://api.mercadopago.com/point/integration-api/devices/{point.DeviceId}/payment-intents/{paymentIntent}");
                     request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {point.Token}");
                     request.Headers.TryAddWithoutValidation("x-test-scope", "sandbox"); //borrar en produccion
                     using HttpResponseMessage? response = await httpClient.SendAsync(request);
@@ -133,8 +135,8 @@ namespace backaramis.Services
                     {
                         try
                         {
-                            return await response.Content.ReadFromJsonAsync<CancelIntentPayDto>();
-
+                            var result = await response.Content.ReadFromJsonAsync<CancelIntentPayDto>();
+                            return result!;
                         }
                         catch (NotSupportedException) // When content type is not valid
                         {
@@ -146,7 +148,7 @@ namespace backaramis.Services
                         }
                     }
                 }
-                return null;
+                return null!;
             }
 
             catch (Exception ex)
@@ -164,9 +166,9 @@ namespace backaramis.Services
                 {
                     throw new Exception("Verifique, no existen dispositivos asociados");
                 }
-                using (HttpClient? httpClient = new HttpClient())
+                using (HttpClient? httpClient = new())
                 {
-                    using HttpRequestMessage? request = new HttpRequestMessage(new HttpMethod("GET"), $"https://api.mercadopago.com/point/integration-api/payment-intents/{paymentIntentId}/events");
+                    using HttpRequestMessage? request = new(new HttpMethod("GET"), $"https://api.mercadopago.com/point/integration-api/payment-intents/{paymentIntentId}/events");
                     request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {point.Token}");
                     request.Headers.TryAddWithoutValidation("x-test-scope", "sandbox"); //borrar en produccion
                     using HttpResponseMessage? response = await httpClient.SendAsync(request);
@@ -174,7 +176,8 @@ namespace backaramis.Services
                     {
                         try
                         {
-                            return await response.Content.ReadFromJsonAsync<StateIntentPayDto>();
+                            var result = await response.Content.ReadFromJsonAsync<StateIntentPayDto>();
+                            return result!;
 
                         }
                         catch (NotSupportedException) // When content type is not valid
@@ -187,7 +190,7 @@ namespace backaramis.Services
                         }
                     }
                 }
-                return null;
+                return null!;
             }
 
             catch (Exception ex)
@@ -196,10 +199,10 @@ namespace backaramis.Services
                 throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
-        public async Task<ReciboDto> Insert(ReciboInsertDto ReciboInsert)
+        public async Task<int> Insert(ReciboInsertDto ReciboInsert)
         {
             try
-            {
+            { 
                 Recibo? Recibo = _mapper.Map<ReciboInsertDto, Recibo>(ReciboInsert);
 
                 SystemOption? systemOption = await _context.SystemOptions.FirstOrDefaultAsync();
@@ -211,28 +214,24 @@ namespace backaramis.Services
                 Recibo.Id = systemOption.R;
                 _context.SystemOptions.Attach(systemOption);
 
-                decimal Total = 0;
+                decimal Total = Recibo.ReciboDetalles.Sum(x => x.Monto);
+                decimal TotalDocumento = 0;
                 decimal PagoAplicado = 0;
-
-                foreach (ReciboDetalle? d in Recibo.ReciboDetalles)
-                {
-                    Total += d.Monto;
-                    d.Recibo = Recibo.Id;
-                }
 
                 await _context.Recibos.AddAsync(Recibo);
 
-                foreach (int doc in ReciboInsert.Documents)
+                foreach (int doc in ReciboInsert.Documents!)
                 {
                     //cambiamos de update el document a insertar un documento-recibo con el monto
                     Documento? docu = await _context.Documentos.FirstAsync(d => d.Id == doc);
                     IQueryable<decimal>? q = from d in _context.DocumentoDetalles
                                              where d.Documento == doc
                                              select d.Unitario * d.Cantidad;
-                    if (Total - PagoAplicado >= q.Sum() - docu.Pago)
+                    TotalDocumento = q.Sum();
+                    if (Total - PagoAplicado >= TotalDocumento - docu.Pago)
                     {
-                        docu.Pago = q.Sum();
-                        PagoAplicado += q.Sum();
+                        docu.Pago = TotalDocumento;
+                        PagoAplicado += TotalDocumento;
                         DocumentoRecibo documentoRecibo = new()
                         {
                             Documento = docu.Id,
@@ -262,114 +261,435 @@ namespace backaramis.Services
                     Documento? documento = await _context.Documentos.FirstAsync(x => x.Id == ReciboInsert.Documents.First());
                     if (documento != null)
                     {
-                        documento.Estado = _context.DocumentoEstados.FirstOrDefaultAsync(d => d.Detalle == "ENTREGADO").Result.Id;
+                        documento.Estado = _context.DocumentoEstados.FirstOrDefaultAsync(d => d.Detalle == "ENTREGADO").Result!.Id;
                         //si viene de un presupuesto lo transforma en lo que sea
-                        if (documento.Tipo == _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "PRESUPUESTO").Id)
+                        if (documento.Tipo == _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "PRESUPUESTO")!.Id)
                         {
-                            documento.Tipo = _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "REMITO").Id;
+                            documento.Tipo = _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "REMITO")!.Id;
+                            documento.Fecha = DateTime.Now;
                         }
                         //si viene de una orden la modifica y crea uno nuevo
 
-                        if (documento.Tipo == _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "ORDEN DE SERVICIO").Id)
+                        if (documento.Tipo == _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "ORDEN DE SERVICIO")!.Id)
                         {
-                            Documento newRemito = new();
-                            newRemito = documento;
-                            newRemito.Tipo = _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "REMITO").Id;
-                            _context.Documentos.Add(newRemito);
-                        }
+                            DocumentoOrden pasoAremito = new();
+                            pasoAremito.Orden = documento.Numero;
+                            pasoAremito.Documento = documento.Id;
+                            _context.DocumentoOrdens.Add(pasoAremito);
+                            documento.Tipo = _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "REMITO")!.Id;
+                            documento.Fecha = DateTime.Now;
+                        } 
+
+                        _context.Documentos.Update(documento!);
                     }
-                    _context.Documentos.Update(documento);
                 }
 
                 int result = await _context.SaveChangesAsync();
 
-                return result > 0 ? GetRecibo(Recibo.Id) : throw new Exception("No se pudo ingresar el Recibo");
-
+                return result > 0 ? Recibo.Id : throw new Exception("No se pudo ingresar el Recibo");
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
-        public ReciboDto GetRecibo(int id)
+        public FileStreamResult GetReciboReport(int id)
         {
             try
             {
-                DataSet ds = new();
+                var recibo = _context.Recibos
+                             .Where(r => r.Id == id)
+                             .Include(rd => rd.ReciboDetalles)
+                             .FirstOrDefault();
 
-                List<SqlParameter> Params = new();
-                if (id != 0)
+                var total = 0.0m;
+                foreach (var rd in recibo!.ReciboDetalles)
                 {
-                    Params.Add(new SqlParameter("@recibo", id));
+                    total += rd.Monto;
                 }
 
-                ds = _storeProcedure.SpWhithDataSetPure("ReciboDto", Params);
-                ReciboDto reciboDto = new();
-                List<ReciboDetallDto>? detalles = new();
-                List<DocumentsDto>? documents = new();
-                DataTable dtDocuments = new();
-                DataTable dtDetalles = new();
-                DataTable dtRecibo = new();
-                dtRecibo = ds.Tables[0];
-                dtDetalles = ds.Tables[1];
-                dtDocuments = ds.Tables[2];
+                string letras = ExtensionMethods.NumeroLetras(total);
 
+                var cliente = _context.Clientes
+                              .Where(c => c.Id == recibo!.Cliente)
+                             .FirstOrDefault();
 
-                foreach (DataRow row in dtDetalles.Rows)
+                var empresa = _context.SystemOptions.FirstOrDefault();
+
+                if (recibo == null)
                 {
-                    detalles.Add(new ReciboDetallDto()
+                    return null!;
+                }
+
+                var stream = new MemoryStream();
+
+                Document.Create(container =>
+                {
+                    container.Page(page =>
                     {
-                        Id = (long)row["Id"],
-                        Codigo = row["Codigo"].ToString(),
-                        Detalle = row["Detalle"].ToString(),
-                        Sucursal = row["Sucursal"].ToString(),
-                        Tipo = row["Tipo"].ToString(),
-                        Monto = (decimal)row["Monto"]
+                        //seteamos la página
+                        page.Size(PageSizes.A4.Landscape());
+                        page.Margin(5, Unit.Millimetre);
+                        page.PageColor(Colors.White);
+                        page.DefaultTextStyle(x => x.FontSize(20));
+                        page.DefaultTextStyle(x => x.FontFamily("Arial"));
+                        page.Header()
+                        .Grid(grid =>
+                        {
+                            grid.Columns(11);
+                            grid.Item(5)
+                              .Column(column =>
+                              {
+                                  column.Item().Height(35, Unit.Millimetre).Row(row =>
+                                  {
+                                      row.RelativeItem(1).Image("Images/logo.jpg");
+
+                                      row.RelativeItem(1).Border(1, Unit.Point)
+                                     .Grid(grid =>
+                                     {
+                                         grid.Columns(1);
+                                         grid.Item()
+                                     .DefaultTextStyle(x => x.FontSize(40))
+                                     .DefaultTextStyle(f => f.Bold())
+                                     .AlignCenter()
+                                     .PaddingVertical(1, Unit.Millimetre)
+                                     .Text(text =>
+                                     {
+                                         text.Span("R");
+                                     });
+                                         grid.Item()
+                                        .DefaultTextStyle(x => x.FontSize(10))
+                                        .AlignCenter()
+                                        .PaddingBottom(3, Unit.Millimetre)
+                                        .Text(text =>
+                                        {
+                                            text.Span("ORIGINAL");
+                                        });
+                                     });
+
+                                      row.Spacing(10);
+                                      row.RelativeItem(2)
+                                      .Border(1, Unit.Point)
+                                      .Padding(5, Unit.Millimetre)
+                                      .DefaultTextStyle(x => x.FontSize(12))
+                                      .DefaultTextStyle(f => f.Bold())
+                                      .Grid(grid =>
+                                      {
+                                          grid.Columns(1);
+                                          grid.Item()
+                                           .Text(text =>
+                                           {
+                                               text.AlignCenter();
+                                               text.Span("RECIBO");
+                                           });
+                                          grid.Item()
+                                           .Text(text =>
+                                           {
+                                               text.AlignRight();
+                                               text.Span("\n" + "FC: " + recibo.Id.ToString("D10"));
+                                           });
+                                          grid.Item()
+                                          .Text(text =>
+                                          {
+                                              text.DefaultTextStyle(f => f.FontSize(12));
+                                              text.AlignRight();
+                                              text.Span("FECHA: " + recibo.Fecha.ToShortDateString());
+                                          });
+                                      });
+
+                                  });
+                                  column.Item().Row(row =>
+                                  {
+                                      row.RelativeItem(2)
+                                      .PaddingVertical(3, Unit.Millimetre)
+                                      .DefaultTextStyle(f => f.FontSize(10))
+                                      .DefaultTextStyle(t => t.FontColor("#1f66ff"))
+                                      .Text("Razón Social: " + empresa!.Razon
+                                      + "\n" + empresa!.Fantasia
+                                      + "\n" + empresa!.Domicilio
+                                      + "\n" + empresa!.ResponsabilidadEmpresa
+                                      );
+
+                                      row.RelativeItem(1)
+                                     .PaddingVertical(3, Unit.Millimetre)
+                                     .DefaultTextStyle(f => f.FontSize(10))
+                                     .DefaultTextStyle(t => t.FontColor("#1f66ff"))
+                                     .AlignRight()
+                                     .Text("Cuit: " + empresa!.Cuit
+                                     + "\n" + "IIBB: " + empresa!.Iibb
+                                     + "\n" + "I. Actividades: " + empresa!.InicioActividades
+                                     );
+                                  });
+                                  column.Item().Row(row =>
+                                  {
+                                      row.RelativeItem(1)
+                                     .DefaultTextStyle(f => f.FontSize(10))
+                                     .BorderTop(1, Unit.Millimetre).BorderColor("#858796")
+                                     .PaddingVertical(3, Unit.Millimetre)
+                                     .DefaultTextStyle(t => t.SemiBold())
+                                     .Text("Cliente: " + cliente!.Nombre
+                                     + "\n" + cliente!.Domicilio
+                                     );
+
+                                      row.RelativeItem(1)
+                                      .DefaultTextStyle(f => f.FontSize(10))
+                                      .BorderTop(1, Unit.Millimetre).BorderColor("#858796")
+                                      .PaddingVertical(3, Unit.Millimetre)
+                                      .DefaultTextStyle(t => t.SemiBold())
+                                      .AlignRight()
+                                      .Text("Cuit: " + cliente!.Cuit
+                                      + "\n" + "RESPONSABLE " + cliente!.Responsabilidad
+                                      );
+                                  });
+                              });
+                            grid.Item(1).PaddingHorizontal(35).LineVertical(1).LineColor(Colors.Grey.Medium);
+                            grid.Item(5)
+                            .Column(column =>
+                            {
+                                column.Item().Height(35, Unit.Millimetre).Row(row =>
+                                {
+                                    row.RelativeItem(1).Image("Images/logo.jpg");
+
+                                    row.RelativeItem(1).Border(1, Unit.Point)
+                                   .Grid(grid =>
+                                   {
+                                       grid.Columns(1);
+                                       grid.Item()
+                                   .DefaultTextStyle(x => x.FontSize(40))
+                                   .DefaultTextStyle(f => f.Bold())
+                                   .AlignCenter()
+                                   .PaddingVertical(1, Unit.Millimetre)
+                                   .Text(text =>
+                                   {
+                                       text.Span("R");
+                                   });
+                                       grid.Item()
+                                      .DefaultTextStyle(x => x.FontSize(10))
+                                      .AlignCenter()
+                                      .PaddingBottom(3, Unit.Millimetre)
+                                      .Text(text =>
+                                      {
+                                          text.Span("COPIA");
+                                      });
+                                   });
+
+                                    row.Spacing(10);
+                                    row.RelativeItem(2)
+                                    .Border(1, Unit.Point)
+                                    .Padding(5, Unit.Millimetre)
+                                    .DefaultTextStyle(x => x.FontSize(12))
+                                    .DefaultTextStyle(f => f.Bold())
+                                    .Grid(grid =>
+                                    {
+                                        grid.Columns(1);
+                                        grid.Item()
+                                         .Text(text =>
+                                         {
+                                             text.AlignCenter();
+                                             text.Span("RECIBO");
+                                         });
+                                        grid.Item()
+                                         .Text(text =>
+                                         {
+                                             text.AlignRight();
+                                             text.Span("\n" + "FC: " + recibo.Id.ToString("D10"));
+                                         });
+                                        grid.Item()
+                                        .Text(text =>
+                                        {
+                                            text.DefaultTextStyle(f => f.FontSize(12));
+                                            text.AlignRight();
+                                            text.Span("FECHA: " + recibo.Fecha.ToShortDateString());
+                                        });
+                                    });
+
+                                });
+                                column.Item().Row(row =>
+                                {
+                                    row.RelativeItem(2)
+                                    .PaddingVertical(3, Unit.Millimetre)
+                                    .DefaultTextStyle(f => f.FontSize(10))
+                                    .DefaultTextStyle(t => t.FontColor("#1f66ff"))
+                                    .Text("Razón Social: " + empresa!.Razon
+                                    + "\n" + empresa!.Fantasia
+                                    + "\n" + empresa!.Domicilio
+                                    + "\n" + empresa!.ResponsabilidadEmpresa
+                                    );
+
+                                    row.RelativeItem(1)
+                                   .PaddingVertical(3, Unit.Millimetre)
+                                   .DefaultTextStyle(f => f.FontSize(10))
+                                   .DefaultTextStyle(t => t.FontColor("#1f66ff"))
+                                   .AlignRight()
+                                   .Text("Cuit: " + empresa!.Cuit
+                                   + "\n" + "IIBB: " + empresa!.Iibb
+                                   + "\n" + "I. Actividades: " + empresa!.InicioActividades
+                                   );
+                                });
+                                column.Item().Row(row =>
+                                {
+                                    row.RelativeItem(1)
+                                   .DefaultTextStyle(f => f.FontSize(10))
+                                   .BorderTop(1, Unit.Millimetre).BorderColor("#858796")
+                                   .PaddingVertical(3, Unit.Millimetre)
+                                   .DefaultTextStyle(t => t.SemiBold())
+                                   .Text("Cliente: " + cliente!.Nombre
+                                   + "\n" + cliente!.Domicilio
+                                   );
+
+                                    row.RelativeItem(1)
+                                    .DefaultTextStyle(f => f.FontSize(10))
+                                    .BorderTop(1, Unit.Millimetre).BorderColor("#858796")
+                                    .PaddingVertical(3, Unit.Millimetre)
+                                    .DefaultTextStyle(t => t.SemiBold())
+                                    .AlignRight()
+                                    .Text("Cuit: " + cliente!.Cuit
+                                    + "\n" + "RESPONSABLE " + cliente!.Responsabilidad
+                                    );
+                                });
+                            });
+                        });
+                        page.Content()
+                       .Grid(grid =>
+                       {
+                           grid.Columns(11);
+                           grid.Item(5)
+                                .PaddingVertical(3, Unit.Millimetre)
+                                .Table(table =>
+                                {
+                                    table.ColumnsDefinition(columns =>
+                                    {
+                                        columns.RelativeColumn(8);
+                                        columns.RelativeColumn(3);
+                                    });
+                                    table.Cell().ColumnSpan(1)
+                                   .Background("#9ca4df")
+                                   .AlignCenter()
+                                   .Text("Detalle de Pagos");
+                                    table.Cell().ColumnSpan(1)
+                                     .Background("#9ca4df")
+                                     .AlignRight()
+                                   .Text("");
+                                    foreach (var c in recibo.ReciboDetalles!)
+                                    {
+                                        table.Cell().Padding(2).DefaultTextStyle(x => x.FontSize(10)).DefaultTextStyle(x => x.SemiBold()).AlignLeft().Text(c.Tipo + "   (" + c.Codigo + ")");
+                                        table.Cell().Padding(2).DefaultTextStyle(x => x.FontSize(12)).DefaultTextStyle(x => x.SemiBold()).AlignRight().Text("$ " + c.Monto);
+                                    }
+                                });
+                           grid.Item(1).PaddingHorizontal(35).LineVertical(1).LineColor(Colors.Grey.Medium);
+                           grid.Item(5)
+                                .PaddingVertical(3, Unit.Millimetre)
+                                .Table(table =>
+                                {
+                                    table.ColumnsDefinition(columns =>
+                                    {
+                                        columns.RelativeColumn(8);
+                                        columns.RelativeColumn(3);
+                                    });
+                                    table.Cell().ColumnSpan(1)
+                                   .Background("#9ca4df")
+                                   .AlignCenter()
+                                   .Text("Detalle de Pagos");
+                                    table.Cell().ColumnSpan(1)
+                                     .Background("#9ca4df")
+                                     .AlignRight()
+                                   .Text("");
+                                    foreach (var c in recibo.ReciboDetalles!)
+                                    {
+                                        table.Cell().Padding(2).DefaultTextStyle(x => x.FontSize(10)).DefaultTextStyle(x => x.SemiBold()).AlignLeft().Text(c.Tipo + "   (" + c.Codigo + ")");
+                                        table.Cell().Padding(2).DefaultTextStyle(x => x.FontSize(12)).DefaultTextStyle(x => x.SemiBold()).AlignRight().Text("$ " + c.Monto);
+                                    }
+                                });
+                       });
+                        page.Footer()
+                       .Grid(grid =>
+                       {
+                           grid.Columns(11);
+                           grid.Item(5)
+                               .BorderTop(1, Unit.Point)
+                               .Column(c =>
+                               {
+                                   c.Item().Row(r =>
+                                   {
+                                       r.RelativeItem(7)
+                                      .DefaultTextStyle(t => t.FontSize(10))
+                                      .DefaultTextStyle(x => x.Bold())
+                                       .Text(text =>
+                                       {
+                                           text.AlignRight();
+                                           text.Line("Recibimos la suma de " + letras);
+                                           text.AlignLeft();
+                                           text.Span("\n" + "Ud. fue atendido por " + recibo.Operador);
+
+                                       });
+                                       r.RelativeItem(5)
+                                      .DefaultTextStyle(t => t.FontSize(12))
+                                      .DefaultTextStyle(x => x.Bold())
+                                      .AlignRight()
+                                      .Text(text =>
+                                      {
+                                          text.Line("TOTAL $: " + total.ToString());
+                                      });
+                                   });
+                                   c.Item()
+                                   .PaddingTop(5)
+                                   .BorderTop(1, Unit.Point)
+                                   .Text(text =>
+                                   {
+                                       text.DefaultTextStyle(f => f.FontSize(8));
+                                       text.AlignLeft();
+                                       text.Span("2022 © Desarrollado por Aramis Sistemas");
+                                   });
+                               });
+                           grid.Item(1).PaddingHorizontal(35).LineVertical(1).LineColor(Colors.Grey.Medium);
+                           grid.Item(5)
+                               .BorderTop(1, Unit.Point)
+                               .Column(c =>
+                               {
+                                   c.Item().Row(r =>
+                                   {
+                                       r.RelativeItem(7)
+                                      .DefaultTextStyle(t => t.FontSize(10))
+                                      .DefaultTextStyle(x => x.Bold())
+                                       .Text(text =>
+                                       {
+                                           text.AlignRight();
+                                           text.Line("Recibimos la suma de " + letras);
+                                           text.AlignLeft();
+                                           text.Span("\n" + "Ud. fue atendido por " + recibo.Operador);
+
+                                       });
+                                       r.RelativeItem(5)
+                                      .DefaultTextStyle(t => t.FontSize(12))
+                                      .DefaultTextStyle(x => x.Bold())
+                                      .AlignRight()
+                                      .Text(text =>
+                                      {
+                                          text.Line("TOTAL $: " + total.ToString());
+                                      });
+                                   });
+                                   c.Item()
+                                   .PaddingTop(5)
+                                   .BorderTop(1, Unit.Point)
+                                   .Text(text =>
+                                   {
+                                       text.DefaultTextStyle(f => f.FontSize(8));
+                                       text.AlignLeft();
+                                       text.Span("2022 © Desarrollado por Aramis Sistemas");
+                                   });
+                               });
+                       });
                     });
-                }
-
-                foreach (DataRow row in dtDocuments.Rows)
-                {
-                    documents.Add(new DocumentsDto()
-                    {
-                        Id = (long)row["Id"],
-                        Cuit = (long)row["Cuit"],
-                        Fecha = (DateTime)row["Fecha"],
-                        Letra = row["Letra"].ToString(),
-                        Nombre = row["Nombre"].ToString(),
-                        Cliente = (long)row["Cliente"],
-                        Numero =  row["Numero"].ToString(),
-                        Observaciones = row["Observaciones"].ToString(),
-                        Operador = row["Operador"].ToString(),
-                        Pos = row["Pos"].ToString(),
-                        CodTipo = (int)row["CodTipo"],
-                        Tipo = row["Tipo"].ToString(),
-                        Total = (decimal)row["Total"],
-                        Limite = (decimal)row["Limite"],
-                        EstadoPago = row["EstadoPago"].ToString()
-                    });
-                }
-
-                foreach (DataRow row in dtRecibo.Rows)
-                {
-                    reciboDto.Id = (int)row["Id"];
-                    reciboDto.Cliente = (long)row["Cliente"];
-                    reciboDto.Cuit = (long)row["Cuit"];
-                    reciboDto.Nombre = row["Nombre"].ToString();
-                    reciboDto.Fecha = (DateTime)row["Fecha"];
-                    reciboDto.Operador = row["Operador"].ToString();
-                    reciboDto.Total = (decimal)row["Total"];
-                    reciboDto.Documents = documents;
-                    reciboDto.Detalles = detalles;
-                };
-
-                return reciboDto;
-
+                })
+                .GeneratePdf(stream);
+                stream.Seek(0, SeekOrigin.Begin);
+                return new FileStreamResult(stream, "application/pdf");
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
-        }
+        } 
     }
 }
+

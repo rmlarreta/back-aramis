@@ -1,24 +1,26 @@
-﻿using backaramis.Interfaces;
+﻿using AfipServiceReference;
+using AfipWsfeClient;
+using backaramis.Interfaces;
 using backaramis.Models;
 using backaramis.Modelsdtos.Documents;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
-using QRCoder; 
+using Microsoft.EntityFrameworkCore;
+using QRCoder;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System.Data;
-using System.Drawing;
 using System.Text.Json;
 
 namespace backaramis.Services
 {
-    public class DocumentService : IDocumentService
+    public class DocumentService : IDocumentService, IFiscalService
     {
         private readonly IStoreProcedure _storeProcedure;
-        private readonly aramisContext _context;
+        private readonly AramisContext _context;
 
-        public DocumentService(IStoreProcedure storeProcedure, aramisContext context)
+        public DocumentService(IStoreProcedure storeProcedure, AramisContext context)
         {
             _storeProcedure = storeProcedure;
             _context = context;
@@ -68,8 +70,8 @@ namespace backaramis.Services
                         CodTipo = (int)row["CodTipo"],
                         Letra = row["Letra"].ToString(),
                         Tipo = row["Tipo"].ToString(),
-                        Pos = row["Pos"].ToString(),
-                        Numero = row["Numero"].ToString(),
+                        Pos = row["Pos"].ToString()!,
+                        Numero = row["Numero"].ToString()!,
                         Fecha = (DateTime)row["Fecha"],
                         Cuit = (long)row["Cuit"],
                         Nombre = row["Nombre"].ToString(),
@@ -83,25 +85,25 @@ namespace backaramis.Services
                         Excento = (decimal)row["Excento"],
                         Iva10 = (decimal)row["Iva10"],
                         Iva21 = (decimal)row["Iva21"],
-                        DomicilioCliente = row["DomicilioCliente"].ToString(),
-                        ResponsabilidadCliente = row["ResponsabilidadCliente"].ToString(),
+                        DomicilioCliente = row["DomicilioCliente"].ToString()!,
+                        ResponsabilidadCliente = row["ResponsabilidadCliente"].ToString()!,
                         EnLetras = row["EnLetras"].ToString(),
                         NumeroInt = (int)row["NumeroInt"],
                         PosInt = (int)row["PosInt"],
-                        CodAut=(int)row["CodAut"],
-                        Vence=(DateTime)row["Vence"]
+                        CodAut = row["CodAut"].ToString(),
+                        Vence = (DateTime)row["Vence"]
                     });
                 }
 
                 foreach (DataRow rowE in dtEmpresa.Rows)
                 {
-                    documents.First().Razon = rowE["Razon"].ToString();
-                    documents.First().CuitEmpresa = rowE["CuitEmpresa"].ToString();
-                    documents.First().Fantasia = rowE["Fantasia"].ToString();
-                    documents.First().IIBB = rowE["IIBB"].ToString();
-                    documents.First().DomicilioEmpresa = rowE["DomicilioEmpresa"].ToString();
-                    documents.First().InicioActividades = rowE["InicioActividades"].ToString();
-                    documents.First().ResponsabilidadEmpresa = rowE["ResponsabilidadEmpresa"].ToString();
+                    documents.First().Razon = rowE["Razon"].ToString()!;
+                    documents.First().CuitEmpresa = rowE["CuitEmpresa"].ToString()!;
+                    documents.First().Fantasia = rowE["Fantasia"].ToString()!;
+                    documents.First().IIBB = rowE["IIBB"].ToString()!;
+                    documents.First().DomicilioEmpresa = rowE["DomicilioEmpresa"].ToString()!;
+                    documents.First().InicioActividades = rowE["InicioActividades"].ToString()!;
+                    documents.First().ResponsabilidadEmpresa = rowE["ResponsabilidadEmpresa"].ToString()!;
                 }
 
                 foreach (DataRow rowQ in dtDetalles.Rows)
@@ -109,29 +111,34 @@ namespace backaramis.Services
                     detalles.Add(new DocumentsDetallDto()
                     {
                         Cantidad = (decimal)rowQ["Cantidad"],
-                        Detalle = rowQ["Detalle"].ToString(),
+                        Detalle = rowQ["Detalle"].ToString()!,
                         Documento = (long)rowQ["Documento"],
                         Id = (long)rowQ["Id"],
                         Internos = (decimal)rowQ["Internos"],
                         Iva = (decimal)rowQ["Iva"],
                         Unitario = (decimal)rowQ["Unitario"],
-                        Codigo = rowQ["Codigo"].ToString(),
+                        Codigo = rowQ["Codigo"].ToString()!,
                         Producto = (long)rowQ["Producto"],
-                        Rubro = rowQ["Rubro"].ToString(),
+                        Rubro = rowQ["Rubro"].ToString()!,
                         SubTotal = (decimal)rowQ["SubTotal"]
                     });
                 }
                 Documents data = new();
                 data.DocumentsDto = documents;
                 data.DocumentsDetallDto = detalles;
-                return data;
+                if (data != null)
+                    return data;
+
+                return null!;
             }
             catch (Exception ex)
             {
+                if (ex.Message == "Sequence contains no elements")
+                    return null!;
+
                 throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
-
         public void InsertDocument(string Operador)
         {
             try
@@ -145,7 +152,6 @@ namespace backaramis.Services
                 throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
-
         public Documento InsertOrden(long Id)
         {
             try
@@ -180,7 +186,6 @@ namespace backaramis.Services
                 throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
-
         public Documento UpdateClienteDocument(long Id, long cliente)
         {
             try
@@ -201,38 +206,43 @@ namespace backaramis.Services
             {
                 throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
-        } 
+        }
         public FileStreamResult Report(int id)
         {
             var documento = GetDocuments(id);
             if (documento == null)
             {
-                return null;
+                return null!;
             }
             var stream = new MemoryStream();
             var QrJsonModel = new QrJson
             {
-                CodAut = 0,// remito.DocumentsDto.First().CodAuto
+                CodAut = documento.DocumentsDto!.First().CodTipo > 3 ? documento.DocumentsDto!.First().CodAut! : "0",
                 Ctz = 1,
-                Cuit = documento.DocumentsDto.First().CuitEmpresa.Replace("-", ""),
-                Fecha = documento.DocumentsDto.First().Fecha.ToString("yyyy-MM-dd"),
-                Importe = documento.DocumentsDto.First().Total,
+                Cuit = documento.DocumentsDto!.First().CuitEmpresa!.Replace("-", ""),
+                Fecha = documento.DocumentsDto!.First().Fecha.ToString("yyyy-MM-dd"),
+                Importe = documento.DocumentsDto!.First().Total,
                 Moneda = "PES",
-                NroCmp = documento.DocumentsDto.First().NumeroInt,
-                NroDocRec = documento.DocumentsDto.First().Cuit,
-                PtoVenta = documento.DocumentsDto.First().PosInt,
-                TipoCmp = 88, //de acuerdo al tipo de comprobante
-                TipoCodAut = "O",
-                TipoDocRec = documento.DocumentsDto.First().Cuit == 0 ? 99 : 86,
-                Ver=1
+                NroCmp = documento.DocumentsDto!.First().NumeroInt,
+                NroDocRec = documento.DocumentsDto!.First().Cuit,
+                PtoVenta = documento.DocumentsDto!.First().PosInt,
+                TipoCmp = documento.DocumentsDto!.First().CodTipo == 3 ? 88
+                : documento.DocumentsDto!.First().CodTipo == 4 ? 1
+                : documento.DocumentsDto!.First().CodTipo == 5 ? 6
+                : documento.DocumentsDto!.First().CodTipo == 6 ? 3
+                : documento.DocumentsDto!.First().CodTipo == 7 ? 8
+                : 0, //de acuerdo al tipo de comprobante
+                TipoCodAut = "E",
+                TipoDocRec = documento.DocumentsDto!.First().Cuit == 0 ? 99 : 86,
+                Ver = 1
             };
-            var QrString = JsonSerializer.Serialize(QrJsonModel);            
+            var QrString = JsonSerializer.Serialize(QrJsonModel);
             var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(QrString);
-            QRCodeGenerator qrGenerator = new(); 
+            QRCodeGenerator qrGenerator = new();
             QRCodeData qrCodeData = qrGenerator.CreateQrCode("https://www.afip.gob.ar/fe/qr/?p=" + Convert.ToBase64String(plainTextBytes), QRCodeGenerator.ECCLevel.Q);
             BitmapByteQRCode qrCode = new(qrCodeData);
-            byte[] qrCodeAsBitmapByteArr = qrCode.GetGraphic(20); 
-              
+            byte[] qrCodeAsBitmapByteArr = qrCode.GetGraphic(20);
+
             Document.Create(container =>
                     {
                         container.Page(page =>
@@ -274,7 +284,7 @@ namespace backaramis.Services
                                     .PaddingVertical(1, Unit.Millimetre)
                                     .Text(text =>
                                     {
-                                        text.Span(documento.DocumentsDto.First().Letra);
+                                        text.Span(documento.DocumentsDto!.First().Letra);
                                     });
                                         grid.Item()
                                        .DefaultTextStyle(x => x.FontSize(10))
@@ -282,7 +292,7 @@ namespace backaramis.Services
                                        .PaddingBottom(3, Unit.Millimetre)
                                        .Text(text =>
                                        {
-                                           text.Span(documento.DocumentsDto.First().Tipo);
+                                           text.Span(documento.DocumentsDto!.First().Tipo);
                                        });
                                     });
 
@@ -299,20 +309,20 @@ namespace backaramis.Services
                                           .Text(text =>
                                           {
                                               text.AlignCenter();
-                                              text.Span(documento.DocumentsDto.First().Tipo);
+                                              text.Span(documento.DocumentsDto!.First().Tipo);
                                           });
                                          grid.Item()
                                           .Text(text =>
                                           {
                                               text.AlignRight();
-                                              text.Span("\n FC: " + documento.DocumentsDto.First().Pos + " - " + documento.DocumentsDto.First().Numero);
+                                              text.Span("\n FC: " + documento.DocumentsDto!.First().Pos + " - " + documento.DocumentsDto!.First().Numero);
                                           });
                                          grid.Item()
                                          .Text(text =>
                                          {
                                              text.DefaultTextStyle(f => f.NormalWeight());
                                              text.AlignRight();
-                                             text.Span("FECHA: " + documento.DocumentsDto.First().Fecha.ToShortDateString());
+                                             text.Span("FECHA: " + documento.DocumentsDto!.First().Fecha.ToShortDateString());
                                          });
                                      });
 
@@ -323,19 +333,19 @@ namespace backaramis.Services
                                     .PaddingVertical(3, Unit.Millimetre)
                                     .DefaultTextStyle(f => f.FontSize(10))
                                     .DefaultTextStyle(t => t.FontColor("#1f66ff"))
-                                    .Text("Razón Social: " + documento.DocumentsDto.First().Razon
-                                    + "\n" + documento.DocumentsDto.First().Fantasia
-                                    + "\n" + documento.DocumentsDto.First().DomicilioEmpresa
-                                    + "\n" + documento.DocumentsDto.First().ResponsabilidadEmpresa
+                                    .Text("Razón Social: " + documento.DocumentsDto!.First().Razon
+                                    + "\n" + documento.DocumentsDto!.First().Fantasia
+                                    + "\n" + documento.DocumentsDto!.First().DomicilioEmpresa
+                                    + "\n" + documento.DocumentsDto!.First().ResponsabilidadEmpresa
                                     );
 
                                     row.RelativeItem(1)
                                    .PaddingVertical(3, Unit.Millimetre)
                                    .DefaultTextStyle(f => f.FontSize(10))
                                    .DefaultTextStyle(t => t.FontColor("#1f66ff"))
-                                   .Text("Cuit: " + documento.DocumentsDto.First().CuitEmpresa
-                                   + "\n" + "IIBB: " + documento.DocumentsDto.First().IIBB
-                                   + "\n" + "I. Actividades: " + documento.DocumentsDto.First().InicioActividades
+                                   .Text("Cuit: " + documento.DocumentsDto!.First().CuitEmpresa
+                                   + "\n" + "IIBB: " + documento.DocumentsDto!.First().IIBB
+                                   + "\n" + "I. Actividades: " + documento.DocumentsDto!.First().InicioActividades
                                    );
                                 });
 
@@ -346,8 +356,8 @@ namespace backaramis.Services
                                    .BorderTop(1, Unit.Millimetre).BorderColor("#858796")
                                    .PaddingVertical(2, Unit.Millimetre)
                                    .DefaultTextStyle(t => t.SemiBold())
-                                   .Text("Cliente: " + documento.DocumentsDto.First().Nombre
-                                   + "\n" + documento.DocumentsDto.First().DomicilioCliente
+                                   .Text("Cliente: " + documento.DocumentsDto!.First().Nombre
+                                   + "\n" + documento.DocumentsDto!.First().DomicilioCliente
                                    );
 
                                     row.RelativeItem(1)
@@ -355,8 +365,8 @@ namespace backaramis.Services
                                     .BorderTop(1, Unit.Millimetre).BorderColor("#858796")
                                     .PaddingVertical(2, Unit.Millimetre)
                                     .DefaultTextStyle(t => t.SemiBold())
-                                    .Text("Cuit: " + documento.DocumentsDto.First().Cuit
-                                    + "\n" + "RESPONSABLE " + documento.DocumentsDto.First().ResponsabilidadCliente
+                                    .Text("Cuit: " + documento.DocumentsDto!.First().Cuit
+                                    + "\n" + "RESPONSABLE " + documento.DocumentsDto!.First().ResponsabilidadCliente
                                     );
                                 });
                             });
@@ -394,7 +404,7 @@ namespace backaramis.Services
                                      .Background("#9ca4df")
                                    .Text("Sub Total");
 
-                                    foreach (var c in documento.DocumentsDetallDto)
+                                    foreach (var c in documento.DocumentsDetallDto!)
                                     {
                                         table.Cell().Padding(0).DefaultTextStyle(x => x.FontSize(8)).DefaultTextStyle(x => x.NormalWeight()).AlignCenter().Text(c.Codigo);
                                         table.Cell().Padding(0).DefaultTextStyle(x => x.FontSize(8)).DefaultTextStyle(x => x.NormalWeight()).AlignLeft().Text(c.Detalle);
@@ -412,19 +422,25 @@ namespace backaramis.Services
                                    c.Item().Row(r =>
                                    {
                                        r.RelativeItem()
+                                       .Text(documento.DocumentsDto!.First().Observaciones);
+                                   });
+                                   c.Item().BorderTop(1, Unit.Point);
+                                   c.Item().Row(r =>
+                                   {
+                                       r.RelativeItem()
                                       .DefaultTextStyle(t => t.FontSize(10))
                                       .DefaultTextStyle(x => x.Bold())
-                                      .Text("Neto Gravado: $ " + Math.Round(documento.DocumentsDto.First().Neto, 2)
-                                      + "\n" + "Excento: $ " + Math.Round(documento.DocumentsDto.First().Excento, 2)
-                                      + "\n" + "IVA 10.5%: $ " + Math.Round(documento.DocumentsDto.First().Iva10, 2)
-                                      + "\n" + "IVA 21.0%: $ " + Math.Round(documento.DocumentsDto.First().Iva21, 2)
-                                      + "\n" + "Imp.Internos: $ " + Math.Round(documento.DocumentsDto.First().Internos, 2));
+                                      .Text("Neto Gravado: $ " + Math.Round(documento.DocumentsDto!.First().Neto, 2)
+                                      + "\n" + "Excento: $ " + Math.Round(documento.DocumentsDto!.First().Excento, 2)
+                                      + "\n" + "IVA 10.5%: $ " + Math.Round(documento.DocumentsDto!.First().Iva10, 2)
+                                      + "\n" + "IVA 21.0%: $ " + Math.Round(documento.DocumentsDto!.First().Iva21, 2)
+                                      + "\n" + "Imp.Internos: $ " + Math.Round(documento.DocumentsDto!.First().Internos, 2));
                                        r.RelativeItem()
                                       .DefaultTextStyle(t => t.FontSize(8))
                                       .DefaultTextStyle(x => x.Bold())
                                           .Text(text =>
                                           {
-                                              text.Span("\n" + "\n" + "\n" + "Ud. fue atendido por " + documento.DocumentsDto.First().Operador);
+                                              text.Span("\n" + "\n" + "\n" + "Ud. fue atendido por " + documento.DocumentsDto!.First().Operador);
                                           });
                                        r.RelativeItem(2)
                                       .DefaultTextStyle(t => t.FontSize(12))
@@ -432,37 +448,41 @@ namespace backaramis.Services
                                       .AlignRight()
                                       .Text(text =>
                                         {
-                                            text.Line("TOTAL $: " + Math.Round(documento.DocumentsDto.First().Total, 2));
-                                            text.Line(documento.DocumentsDto.First().EnLetras).FontSize(8);
+                                            text.Line("TOTAL $: " + Math.Round(documento.DocumentsDto!.First().Total, 2));
+                                            text.Line(documento.DocumentsDto!.First().EnLetras).FontSize(8);
                                         });
                                    });
                                    c.Item()
                                    .PaddingTop(5)
-                                   .BorderTop(1, Unit.Point).Grid(grid =>
+                                   .BorderTop(1, Unit.Point)
+                                   .Grid(grid =>
                                        {
-                                           grid.VerticalSpacing(2); 
+                                           grid.VerticalSpacing(2);
                                            grid.HorizontalSpacing(2);
                                            grid.AlignLeft();
                                            grid.Columns(12); // 12 by default
 
-                                           //grid.Item(2).Height(100).Image(qrCodeAsBitmapByteArr, ImageScaling.FitArea);
-                                           //grid.Item(5).Height(80).Image("Images/Afip.jpg", ImageScaling.FitArea); 
-                                           //grid.Item(5).Height(60).AlignRight().Text(t =>
-                                           //{ 
-                                           //    t.DefaultTextStyle(t => t.FontSize(12));
-                                           //    t.DefaultTextStyle(x => x.Bold()); 
-                                           //    t.Line("CAE Nº: " + remito.DocumentsDto.First().CodAut.ToString());
-                                           //    t.Line("Fecha de Vto de CAE: " + remito.DocumentsDto.First().Vence.ToShortDateString());
-                                           //}
-                                           //);
-                                              grid.Item(6).Height(20).AlignLeft().DefaultTextStyle(f=>f.FontSize(10)).Text("2022 © Desarrollado por Aramis Sistemas"); 
-                                              grid.Item(6).Height(20).AlignCenter().DefaultTextStyle(f => f.FontSize(10)).Text(t =>
-                                              { 
-                                                   t.Span("Página ");
-                                                   t.CurrentPageNumber();
-                                                   t.Span(" de ");
-                                                   t.TotalPages(); 
-                                              }); 
+                                           if (documento.DocumentsDto!.First().CodTipo > 3)
+                                           {
+                                               grid.Item(2).Height(100).Image(qrCodeAsBitmapByteArr, ImageScaling.FitArea);
+                                               grid.Item(5).Height(80).Image("Images/Afip.jpg", ImageScaling.FitArea);
+                                               grid.Item(5).Height(60).AlignRight().Text(t =>
+                                               {
+                                                   t.DefaultTextStyle(t => t.FontSize(12));
+                                                   t.DefaultTextStyle(x => x.Bold());
+                                                   t.Line("CAE Nº: " + documento.DocumentsDto!.First().CodAut!);
+                                                   t.Line("Fecha de Vto de CAE: " + documento.DocumentsDto!.First().Vence.ToShortDateString());
+                                               });
+                                           }
+
+                                           grid.Item(6).Height(20).AlignLeft().DefaultTextStyle(f => f.FontSize(10)).Text("2022 © Desarrollado por Aramis Sistemas");
+                                           grid.Item(6).Height(20).AlignCenter().DefaultTextStyle(f => f.FontSize(10)).Text(t =>
+                                           {
+                                               t.Span("Página ");
+                                               t.CurrentPageNumber();
+                                               t.Span(" de ");
+                                               t.TotalPages();
+                                           });
                                        });
                                });
                         });
@@ -470,6 +490,182 @@ namespace backaramis.Services
                    .GeneratePdf(stream);
             stream.Seek(0, SeekOrigin.Begin);
             return new FileStreamResult(stream, "application/pdf");
+        }
+        public async Task<FECAESolicitarResponse> GetCae(DocumentoFiscal documento)
+        {
+            try
+            {
+
+                #region Get Login Ticket
+                //Get Login Ticket
+                var loginClient = new LoginCmsClient { IsProdEnvironment = _context.SystemOptions.First().Produccion };
+                var ticket = await loginClient.LoginCmsAsync("wsfe",
+                                                             "Certificados/certificado.p12",
+                                                             "1234",
+                                                             true);
+                #endregion
+
+                #region wsfeClient
+
+                var wsfeClient = new WsfeClient
+                {
+                    IsProdEnvironment = _context.SystemOptions.First().Produccion,
+                    Cuit = long.Parse(_context.SystemOptions.First().Cuit.Replace("-", "")),
+                    Sign = ticket.Sign,
+                    Token = ticket.Token
+                };
+                var compNumber = wsfeClient.FECompUltimoAutorizadoAsync(_context.SystemOptions.First().PtoVenta, documento.TipoComprobante)
+                    .Result.Body.FECompUltimoAutorizadoResult.CbteNro + 1;
+
+                #endregion
+
+                #region Build WSFE Request
+                //Build WSFE FECAERequest          
+                var feCaeReq = new FECAERequest //CAE REQUEST
+                {
+                    FeCabReq = new FECAECabRequest //CABECECERA DEL CAE REQUEST
+                    {
+                        CantReg = 1,
+                        CbteTipo = documento.TipoComprobante,
+                        PtoVta = _context.SystemOptions.First().PtoVenta
+                    },
+                    FeDetReq = new List<FECAEDetRequest> //LISTADO DETALLE DEL CAE REQUEST
+                {
+                  new FECAEDetRequest
+                    {
+                    CbteDesde = compNumber,
+                    CbteHasta = compNumber,
+                    CbteFch = DateTime.Now.ToString("yyyyMMdd"),
+                    Concepto = 3,
+                    DocNro =  documento.DocumentoCliente,
+                    DocTipo = documento.TipoDocumento,
+                    FchVtoPago = DateTime.Now.ToString("yyyyMMdd"),
+                    ImpNeto =  (double)documento.Neto,
+                    ImpTotal = (double)documento.TotalComprobante,
+                    ImpIVA= (double)documento.IvaTotal,
+                    ImpOpEx=(double)documento.Exento,
+                    ImpTrib= (double)documento.Internos,
+                    FchServDesde = DateTime.Now.ToString("yyyyMMdd"),
+                    FchServHasta =DateTime.Now.ToString("yyyyMMdd"),
+                    Tributos = documento.Tributo,
+                    MonCotiz = 1,
+                    MonId = "PES",
+                    Iva = documento.Alicuotas
+                }
+                }
+                };
+
+                #endregion
+
+                //Call WSFE FECAESolicitar
+                var compResult = await wsfeClient.FECAESolicitarAsync(feCaeReq);
+                return compResult;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return null!;
+            }
+        }
+        public async Task<long> FacturaRemito(Documento documento)
+        {
+            List<SqlParameter> parameters = new()
+            {
+                new SqlParameter("@id", documento.Id)
+            };
+            var totales = _storeProcedure.SpWhithDataSetPure("DocumentoGet", parameters);
+
+
+            DocumentoFiscal documentoFiscal = new();
+            documentoFiscal.TipoComprobante = _context.Clientes.FirstAsync(x => x.Id == documento.Cliente).Result.Responsabilidad == "INSCRIPTO" || _context.Clientes.FirstAsync(x => x.Id == documento.Cliente).Result.Responsabilidad == "MONOTRIBUTO" ? 1 : 6;
+            documentoFiscal.TipoDocumento = _context.Clientes.FirstAsync(x => x.Id == documento.Cliente).Result.Cuit == 0 ? 99 : 80;
+            documentoFiscal.DocumentoCliente = _context.Clientes.FirstAsync(x => x.Id == documento.Cliente).Result.Cuit;
+            documentoFiscal.NoGravado = 0;
+            foreach (DataRow row in totales.Tables[0].Rows)
+            {
+                documentoFiscal.Exento += (decimal)row["Excento"];
+                documentoFiscal.Neto += (decimal)row["Neto"];
+                documentoFiscal.Internos += (decimal)row["Internos"];
+                documentoFiscal.Neto10 += (decimal)row["Neto10"];
+                documentoFiscal.Iva10 += (decimal)row["Iva10"];
+                documentoFiscal.Neto21 += (decimal)row["Neto21"];
+                documentoFiscal.Iva21 += (decimal)row["Iva21"];
+                documentoFiscal.IvaTotal = documentoFiscal.Iva10 + documentoFiscal.Iva21;
+                documentoFiscal.TotalComprobante = (decimal)row["Total"];
+            };
+
+            List<AlicIva> alicIvas = new();
+            if (documentoFiscal.Exento > 0)
+                alicIvas.Add(new() { Id = 3, BaseImp = (double)documentoFiscal.Exento, Importe = 0 });
+            if (documentoFiscal.Iva10 > 0)
+                alicIvas.Add(new() { Id = 4, BaseImp = (double)documentoFiscal.Neto10, Importe = (double)documentoFiscal.Iva10 });
+            if (documentoFiscal.Iva21 > 0)
+                alicIvas.Add(new() { Id = 5, BaseImp = (double)documentoFiscal.Neto21, Importe = (double)documentoFiscal.Iva21 });
+            documentoFiscal.Alicuotas = alicIvas;
+            if (documentoFiscal.Internos > 0)
+            {
+                List<Tributo> tributo = new();
+                tributo.Add(new() { Id = 4, BaseImp = (double)documentoFiscal.TotalComprobante, Importe = (double)documentoFiscal.Internos });
+                documentoFiscal.Tributo = tributo;
+            }
+
+            var cae = await GetCae(documentoFiscal);
+            if (cae != null)
+            {
+                if (cae.Body.FECAESolicitarResult.FeCabResp.Resultado == "A")
+                {
+                    var documentoDetalles = from d in _context.DocumentoDetalles
+                                            where d.Documento == documento.Id
+                                            select d;
+                    if (documentoDetalles.Any())
+                        await documentoDetalles.ForEachAsync(d => d.Facturado = d.Cantidad);
+                    _context.DocumentoDetalles.AttachRange(documentoDetalles);
+
+                    //Creamos el nuevo documento para la factura
+
+                    Documento factura = new();
+                    List<DocumentoDetalle> detallesFiscales = new();
+                    foreach (var d in documentoDetalles)
+                    {
+                        detallesFiscales.Add(new DocumentoDetalle
+                        {
+                            Facturado = d.Facturado,
+                            Codigo = d.Codigo,
+                            Detalle = d.Detalle,
+                            Cantidad = d.Cantidad,
+                            Internos = d.Internos,
+                            Iva = d.Iva,
+                            Producto = d.Producto,
+                            Rubro = d.Rubro,
+                            Unitario = d.Unitario
+                        });
+                    }
+
+                    factura.Tipo = documentoFiscal.TipoComprobante == 6 ? 5 : 4;
+                    factura.Pos = cae.Body.FECAESolicitarResult.FeCabResp.PtoVta;
+                    factura.Numero = (int)cae.Body.FECAESolicitarResult.FeDetResp.First().CbteDesde;
+                    factura.Cliente = documento.Cliente;
+                    factura.Fecha = DateTime.Now;
+                    factura.Vence = DateTime.Now;
+                    factura.Razon = documento.Razon;
+                    factura.Observaciones = "Remito " + (_context.SystemOptions.First().X + 1).ToString();
+                    factura.Operador = documento.Operador;
+                    factura.Creado = DateTime.Now;
+                    factura.Estado = documento.Estado;
+                    factura.Pago = documento.Pago;
+                    factura.CodAut = cae.Body.FECAESolicitarResult.FeDetResp.First().CAE;
+                    factura.DocumentoDetalles = detallesFiscales;
+                    _context.Documentos.Add(factura);
+                }
+            }
+            else
+            {
+                documento.Observaciones = "Pendiente de Facturación";
+                _context.Update(documento);
+            }
+           var result = await _context.SaveChangesAsync();
+           return result;
+
         }
     }
 }

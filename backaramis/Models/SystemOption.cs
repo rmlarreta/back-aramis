@@ -21,5 +21,6 @@ namespace backaramis.Models
         public string? Contacto { get; set; }
         public bool Produccion { get; set; }
         public long Lote { get; set; }
+        public int PtoVenta { get; set; }
     }
 }

@@ -5,13 +5,13 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace backaramis.Models
 {
-    public partial class aramisContext : DbContext
+    public partial class AramisContext : DbContext
     {
-        public aramisContext()
+        public AramisContext()
         {
         }
 
-        public aramisContext(DbContextOptions<aramisContext> options)
+        public AramisContext(DbContextOptions<AramisContext> options)
             : base(options)
         {
         }
@@ -22,6 +22,7 @@ namespace backaramis.Models
         public virtual DbSet<Documento> Documentos { get; set; } = null!;
         public virtual DbSet<DocumentoDetalle> DocumentoDetalles { get; set; } = null!;
         public virtual DbSet<DocumentoEstado> DocumentoEstados { get; set; } = null!;
+        public virtual DbSet<DocumentoOrden> DocumentoOrdens { get; set; } = null!;
         public virtual DbSet<DocumentoRecibo> DocumentoRecibos { get; set; } = null!;
         public virtual DbSet<DocumentoTipo> DocumentoTipos { get; set; } = null!;
         public virtual DbSet<Point> Points { get; set; } = null!;
@@ -38,15 +39,6 @@ namespace backaramis.Models
         public virtual DbSet<UserOperation> UserOperations { get; set; } = null!;
         public virtual DbSet<UserPerfil> UserPerfils { get; set; } = null!;
         public virtual DbSet<UserPerfilOperation> UserPerfilOperations { get; set; } = null!;
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            if (!optionsBuilder.IsConfigured)
-            {
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Server=RICARDO\\SERVER;Database=aramis;Trusted_Connection=True;");
-            }
-        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -186,6 +178,8 @@ namespace backaramis.Models
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
+                entity.Property(e => e.Facturado).HasColumnType("decimal(18, 2)");
+
                 entity.Property(e => e.Internos).HasColumnType("decimal(18, 2)");
 
                 entity.Property(e => e.Iva).HasColumnType("decimal(18, 2)");
@@ -195,6 +189,11 @@ namespace backaramis.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.Unitario).HasColumnType("decimal(18, 2)");
+
+                entity.HasOne(d => d.DocumentoNavigation)
+                    .WithMany(p => p.DocumentoDetalles)
+                    .HasForeignKey(d => d.Documento)
+                    .HasConstraintName("FK_DocumentoDetalle_Documento");
             });
 
             modelBuilder.Entity<DocumentoEstado>(entity =>
@@ -206,6 +205,11 @@ namespace backaramis.Models
                 entity.Property(e => e.Detalle)
                     .HasMaxLength(50)
                     .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<DocumentoOrden>(entity =>
+            {
+                entity.ToTable("DocumentoOrden");
             });
 
             modelBuilder.Entity<DocumentoRecibo>(entity =>
@@ -369,6 +373,8 @@ namespace backaramis.Models
             modelBuilder.Entity<SystemOption>(entity =>
             {
                 entity.Property(e => e.Id).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.PtoVenta).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.Contacto)
                     .HasMaxLength(50)

@@ -16,7 +16,7 @@ namespace backaramis.Binder
                 return new DecimalModelBinder();
             }
 
-            return null;
+            return null!;
         }
     }
 }

@@ -1,8 +1,8 @@
-﻿using AutoMapper;
-using backaramis.Helpers;
+﻿using backaramis.Helpers;
 using backaramis.Interfaces;
 using backaramis.Models;
 using backaramis.Modelsdtos.Recibos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backaramis.Controllers
@@ -15,7 +15,6 @@ namespace backaramis.Controllers
         private readonly IRecibosService _recibosService;
         private readonly IGenericService<Point> _genericPoint;
         private readonly ILoggService _loggService;
-        private readonly IMapper _mapper;
         private readonly SecurityService _securityService;
         private readonly string _userName;
 
@@ -23,20 +22,18 @@ namespace backaramis.Controllers
             IRecibosService recibosService,
             IGenericService<Point> genericPoint,
             ILoggService loggService,
-            IMapper mapper,
             SecurityService securityService
             )
         {
             _recibosService = recibosService;
             _genericPoint = genericPoint;
             _loggService = loggService;
-            _mapper = mapper;
             _securityService = securityService;
             _userName = _securityService.GetUserAuthenticated();
         }
 
         [HttpPost("InsertRecibo")]
-        public async Task<ReciboDto?> InsertRecibo([FromBody] ReciboInsertDto model)
+        public async Task<int?> InsertRecibo([FromBody] ReciboInsertDto model)
         {
 
             model.Operador = _userName;
@@ -44,8 +41,8 @@ namespace backaramis.Controllers
 
             try
             {
-                ReciboDto? data = await _recibosService.Insert(model);
-                _loggService.Log($"InsertRecibo {data.Id}", "Recibos", "Insert", _userName);
+                var data = await _recibosService.Insert(model);
+                _loggService.Log($"InsertRecibo {data}", "Recibos", "Insert", _userName);
                 return data;
             }
             catch (Exception)
@@ -61,7 +58,7 @@ namespace backaramis.Controllers
         [Route("CreatePaymentIntent/{id}")]
         public async Task<PaymentIntentResponeDto> CreatePaymentIntent([FromBody] PaymentIntentDto paymentIntentDto, int id)
         {
-            PaymentIntentResponeDto? data = await _recibosService.CreatePaymentIntent(paymentIntentDto, id);
+            PaymentIntentResponeDto? data = await _recibosService.CreatePaymentIntent(paymentIntentDto, id)!;
             return data;
 
         }
@@ -88,8 +85,7 @@ namespace backaramis.Controllers
         [Route("GetRecibo/{id}")]
         public IActionResult GetRecibo(int id)
         {
-            ReciboDto? data = _recibosService.GetRecibo(id);
-            return Ok(data);
+            return _recibosService.GetReciboReport(id);
 
         }
 
@@ -100,6 +96,5 @@ namespace backaramis.Controllers
             List<Point>? data = _genericPoint.Get();
             return Ok(data);
         }
-
     }
 }

@@ -15,5 +15,8 @@ namespace backaramis.Models
         public decimal Unitario { get; set; }
         public decimal Iva { get; set; }
         public decimal Internos { get; set; }
+        public decimal Facturado { get; set; }
+
+        public virtual Documento DocumentoNavigation { get; set; } = null!;
     }
 }

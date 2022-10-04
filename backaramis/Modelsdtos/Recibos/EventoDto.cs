@@ -2,15 +2,15 @@
 {
     public class EventoDto
     {
-        public List<Evento> events { get; set; }
+        public List<Evento>? Events { get; set; }
 
     }
 
     public class Evento
     {
-        public string payment_intent_id { get; set; }
-        public string status { get; set; }
-        public string created_on { get; set; }
+        public string? Payment_intent_id { get; set; }
+        public string? Status { get; set; }
+        public string? Created_on { get; set; }
     }
 
 }

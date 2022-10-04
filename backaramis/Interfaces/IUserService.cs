@@ -9,7 +9,7 @@ namespace backaramis.Interfaces
         IEnumerable<User> GetAll();
         User GetById(long id);
         User Create(User user, string password);
-        void Update(User user, string password = null);
+        void Update(User user, string? password);
         void Delete(long id);
     }
 }

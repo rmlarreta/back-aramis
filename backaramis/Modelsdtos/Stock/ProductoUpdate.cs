@@ -3,8 +3,8 @@
     public class ProductoUpdate
     {
         public long Id { get; set; }
-        public string Codigo { get; set; }
-        public string Detalle { get; set; }
+        public string? Codigo { get; set; }
+        public string? Detalle { get; set; }
         public int Rubro { get; set; }
         public decimal Costo { get; set; }
         public int Iva { get; set; }

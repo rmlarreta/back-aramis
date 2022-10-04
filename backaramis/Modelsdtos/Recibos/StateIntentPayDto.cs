@@ -2,7 +2,7 @@
 {
     public class StateIntentPayDto
     {
-        public string status { get; set; }
-        public string created_on { get; set; }
+        public string? Status { get; set; }
+        public string? Created_on { get; set; }
     }
 }

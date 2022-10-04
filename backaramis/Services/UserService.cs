@@ -5,9 +5,9 @@ namespace backaramis.Services
 {
     public class UserService : IUserService
     {
-        private readonly aramisContext _context;
+        private readonly AramisContext _context;
 
-        public UserService(aramisContext context)
+        public UserService(AramisContext context)
         {
             _context = context;
         }
@@ -16,7 +16,7 @@ namespace backaramis.Services
         {
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                return null;
+                return null!;
             }
 
             User? user = _context.Users.SingleOrDefault(x => x.Username == username);
@@ -24,13 +24,13 @@ namespace backaramis.Services
             // check if username exists
             if (user == null || user.Confirmado == false)
             {
-                return null;
+                return null!;
             }
 
             // check if password is correct
             if (!VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
             {
-                return null;
+                return null!;
             }
 
             // authentication successful
@@ -44,7 +44,7 @@ namespace backaramis.Services
 
         public User GetById(long id)
         {
-            return _context.Users.Find(id);
+            return _context.Users.Find(id)!;
         }
 
         public User Create(User user, string password)
@@ -73,7 +73,7 @@ namespace backaramis.Services
             return user;
         }
 
-        public void Update(User userParam, string password = null)
+        public void Update(User userParam, string? password = null!)
         {
             User? user = _context.Users.Find(userParam.Id);
 
@@ -147,7 +147,7 @@ namespace backaramis.Services
                 throw new ArgumentException("El valor no puede ser sólo una cadena vacía.", nameof(password));
             }
 
-            using System.Security.Cryptography.HMACSHA512? hmac = new System.Security.Cryptography.HMACSHA512();
+            using System.Security.Cryptography.HMACSHA512? hmac = new();
             passwordSalt = hmac.Key;
             passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
         }
@@ -166,15 +166,15 @@ namespace backaramis.Services
 
             if (storedHash.Length != 64)
             {
-                throw new ArgumentException("Longitud inválida del Password.", "passwordHash");
+                throw new ArgumentException("Longitud inválida del Password.", nameof(password));
             }
 
             if (storedSalt.Length != 128)
             {
-                throw new ArgumentException("Longitu ínválida del Password.", "passwordHash");
+                throw new ArgumentException("Longitud ínválida del Password.", nameof(storedSalt));
             }
 
-            using (System.Security.Cryptography.HMACSHA512? hmac = new System.Security.Cryptography.HMACSHA512(storedSalt))
+            using (System.Security.Cryptography.HMACSHA512? hmac = new(storedSalt))
             {
                 byte[]? computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
                 for (int i = 0; i < computedHash.Length; i++)
@@ -191,11 +191,7 @@ namespace backaramis.Services
 
         public User ChangePassword(string username, string password, string npassword)
         {
-            User? user = Authenticate(username, password);
-            if (user is null)
-            {
-                return null;
-            }
+            User? user = Authenticate(username, password);           
 
             if (!string.IsNullOrWhiteSpace(npassword))
             {

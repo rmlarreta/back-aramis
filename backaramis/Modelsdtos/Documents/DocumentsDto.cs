@@ -12,8 +12,8 @@
         public string? Pos { get; set; }
         public string? Numero { get; set; }
         public DateTime Fecha { get; set; }
-        public int NumeroInt { get; set; }  
-        public int PosInt { get; set; }  
+        public int NumeroInt { get; set; }
+        public int PosInt { get; set; }
         public DateTime Vence { get; set; }
         //EMPRESA
         public string? Razon { get; set; }

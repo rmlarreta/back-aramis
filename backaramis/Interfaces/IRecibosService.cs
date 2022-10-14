@@ -10,6 +10,6 @@ namespace backaramis.Interfaces
         Task<CancelIntentPayDto> CancelPaymentIntent(string PaymentIntent, int id);
         Task<StateIntentPayDto> StatePaymentIntent(string paymentIntentId, int id);
         Task Getpaymentintentlist(int id);
-        FileStreamResult GetReciboReport(int id); 
+        FileStreamResult GetReciboReport(int id);
     }
 }

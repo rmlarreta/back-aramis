@@ -6,6 +6,7 @@ using backaramis.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
 
 WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
@@ -14,7 +15,8 @@ WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-IServiceCollection serviceCollection = builder.Services.AddDbContext<AramisContext>(Options => Options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+IServiceCollection serviceCollection = builder.Services.AddDbContext<AramisContext>(Options => Options.UseSqlServer(
+    builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddCors();
 //#region Binder
 
@@ -75,12 +77,39 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IRecibosService, RecibosService>();
+builder.Services.AddScoped<IFiscalService, DocumentService>();
 builder.Services.AddScoped<SecurityService>();
 
 builder.Services.AddHttpContextAccessor();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(setup =>
+{
+    // Include 'SecurityScheme' to use JWT Authentication
+    global::Microsoft.OpenApi.Models.OpenApiSecurityScheme? jwtSecurityScheme = new()
+    {
+        BearerFormat = "JWT",
+        Name = "JWT Authentication",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = JwtBearerDefaults.AuthenticationScheme,
+        Description = "Put **_ONLY_** your JWT Bearer token on textbox below!",
+
+        Reference = new OpenApiReference
+        {
+            Id = JwtBearerDefaults.AuthenticationScheme,
+            Type = ReferenceType.SecurityScheme
+        }
+    };
+
+    setup.AddSecurityDefinition(jwtSecurityScheme.Reference.Id, jwtSecurityScheme);
+
+    setup.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { jwtSecurityScheme, Array.Empty<string>() }
+    });
+
+});
 
 WebApplication? app = builder.Build();
 

@@ -2,11 +2,12 @@
 using backaramis.Interfaces;
 using backaramis.Models;
 using backaramis.Modelsdtos.Recibos;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backaramis.Controllers
 {
+    [Authorize]
     [Route("[controller]")]
     [ApiController]
 
@@ -41,18 +42,16 @@ namespace backaramis.Controllers
 
             try
             {
-                var data = await _recibosService.Insert(model);
+                int data = await _recibosService.Insert(model);
                 _loggService.Log($"InsertRecibo {data}", "Recibos", "Insert", _userName);
                 return data;
             }
             catch (Exception)
             {
                 _loggService.Log($"ErrorInsertRecibo {model.Cliente}", "Recibos", "Insert", _userName);
-                // return error message if there was an exception
                 return null;
             }
         }
-
 
         [HttpPost]
         [Route("CreatePaymentIntent/{id}")]

@@ -69,6 +69,19 @@ namespace backaramis.Controllers
             }
         }
 
+        [HttpGet("GetDocumentsByRecibo/{id}")]
+        public IActionResult GetDocumentsByRecibo(int id)
+        {
+            try
+            {
+                List<long>? data = _documentService.GetDocumentsByRecibo(id);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
         [HttpGet("GetDocumentsByTipo/{tipo}/{estado:int?}")]
         public IActionResult GetDocumentsByTipo(int tipo, int estado = 1)
         {
@@ -84,19 +97,19 @@ namespace backaramis.Controllers
         }
 
         [HttpPost("InsertDocument")]
-        public IActionResult InsertDocument()
+        public async Task<Documento> InsertDocument()
         {
             try
             {
-                _documentService.InsertDocument(_userName);
-                _loggService.Log($"InsertDocument", "Operaciones", "Add", _userName);
-                return Ok("Correcto");
+                var result = await _documentService.InsertDocument(_userName);
+                _loggService.Log($"InsertDocument {result}", "Operaciones", "Add", _userName);
+                return result;
             }
             catch (Exception ex)
             {
-                _loggService.Log($"Error InsertDocument", "Operaciones", "Add", _userName);
+                _loggService.Log($"Error InsertDocument {ex.Message}", "Operaciones", "Add", _userName);
                 // return error message if there was an exception
-                return BadRequest(new { message = ex.Message });
+                return null!;
             }
         }
 
@@ -110,7 +123,7 @@ namespace backaramis.Controllers
             }
             List<Documento>? data = _mapper.Map<List<DocumentsUpdateDto>, List<Documento>>(model);
             try
-            {
+            { 
                 _genericDocService.Update(data);
                 _loggService.Log($"UpdateDocument {model.First().Id}", "Documentos", "Update", _userName);
                 return Ok("Correcto");
@@ -126,7 +139,7 @@ namespace backaramis.Controllers
         [HttpPatch("InsertOrden/{id}")]
         public IActionResult InsertOrden(long id)
         {
-            try
+            try 
             {
                 Documento? data = _documentService.InsertOrden(id);
                 _loggService.Log($"InsertOrden {data.Numero}", "Orden", "Insert", _userName);
@@ -228,28 +241,26 @@ namespace backaramis.Controllers
             }
         }
 
-        [HttpGet("Report/{id}")]  
+        [HttpGet("Report/{id}")]
         public IActionResult Report(int id)
         {
             return _documentService.Report(id);
         }
 
-        [AllowAnonymous]
-        [HttpPost("FacturaRemito")]
-        public IActionResult FacturaRemito([FromBody] Documento model)
+        [HttpPost("FacturaRemito/{id}")]
+        public async Task<long?> FacturaRemito(long id)
 
         {
             try
             {
-                var data = _fiscalService.FacturaRemito(model); 
-             //   _loggService.Log($"InsertDetall {model.First().Detalle} en {model.First().Documento}", "Operaciones", "Update", _userName);
-                return Ok(data);
+                long data = await _fiscalService.FacturaRemito(id);
+                _loggService.Log($"FacturaRemito {id}", "Documentos", "Update", _userName);
+                return data;
             }
             catch (Exception ex)
             {
-            //    _loggService.Log($"Error InsertDetall {model.First().Detalle} en {model.First().Documento}", "Operaciones", "Update", _userName);
-                // return error message if there was an exception
-                return BadRequest(new { message = ex.Message });
+                _loggService.Log($"Error FacturaRemito {id} {ex.Message}", "Documentos}", "Update", _userName);
+                return null;
             }
         }
     }

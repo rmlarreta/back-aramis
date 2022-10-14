@@ -1,16 +1,15 @@
 ﻿using backaramis.Interfaces;
-using backaramis.Models;
 using backaramis.Modelsdtos.Stock;
 using System.Data;
 namespace backaramis.Services
 {
     public class StockService : IStockService
     {
-        private readonly IStoreProcedure _storeProcedure; 
+        private readonly IStoreProcedure _storeProcedure;
 
         public StockService(IStoreProcedure storeProcedure)
         {
-            _storeProcedure = storeProcedure; 
+            _storeProcedure = storeProcedure;
         }
 
         public IEnumerable<ProductoDto> GetProductos()

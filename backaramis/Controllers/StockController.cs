@@ -71,7 +71,6 @@ namespace backaramis.Controllers
             catch (Exception ex)
             {
                 _loggService.Log($"Error InsertProducto {model.Detalle}", "Stock", "Add", _userName);
-                // return error message if there was an exception
                 return BadRequest(new { message = ex.Message });
             }
         }
@@ -82,7 +81,6 @@ namespace backaramis.Controllers
 
             try
             {
-                // create user
                 _stockGenService.Delete(id);
                 _loggService.Log($"DeleteProducto {id}", "Stock", "Delete", _userName);
                 return Ok("Correcto");
@@ -90,7 +88,6 @@ namespace backaramis.Controllers
             catch (Exception ex)
             {
                 _loggService.Log($"Error DeleteProducto {id}", "Stock", "Delete", _userName);
-                // return error message if there was an exception
                 return BadRequest(new { message = ex.Message });
             }
         }
@@ -101,7 +98,6 @@ namespace backaramis.Controllers
             List<Producto>? producto = _mapper.Map<List<ProductoUpdate>, List<Producto>>(model);
             try
             {
-                // create user
                 _stockGenService.Update(producto);
                 _loggService.Log($"UpdateProducto {model.First().Detalle}", "Stock", "Update", _userName);
                 return Ok("Correcto");
@@ -109,7 +105,6 @@ namespace backaramis.Controllers
             catch (Exception ex)
             {
                 _loggService.Log($"Error UpdateProducto {model.First().Detalle}", "Stock", "Update", _userName);
-                // return error message if there was an exception
                 return BadRequest(new { message = ex.Message });
             }
         }
@@ -144,7 +139,6 @@ namespace backaramis.Controllers
             catch (Exception ex)
             {
                 _loggService.Log($"Error InsertRubro {model.Detalle}", "Rubro", "Add", _userName);
-                // return error message if there was an exception
                 return BadRequest(new { message = ex.Message });
             }
         }
@@ -162,7 +156,6 @@ namespace backaramis.Controllers
             catch (Exception ex)
             {
                 _loggService.Log($"Error DeleteRubro {id}", "Rubro", "Delete", _userName);
-                // return error message if there was an exception
                 return BadRequest(new { message = ex.Message });
             }
         }
@@ -180,7 +173,6 @@ namespace backaramis.Controllers
             catch (Exception ex)
             {
                 _loggService.Log($"Error UpdateRubro {model.First().Detalle}", "Rubro", "Update", _userName);
-                // return error message if there was an exception
                 return BadRequest(new { message = ex.Message });
             }
         }

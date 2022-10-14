@@ -50,7 +50,7 @@ namespace backaramis.Services
                     {
                         Params.Add(new SqlParameter("@estado", estado));
                     }
-                    ds = _storeProcedure.SpWhithDataSetPure("DocumentoGet", Params);
+                    ds = _storeProcedure.SpWhithDataSetPure(tipo == 3 ? "RemitosGet" : "DocumentoGet", Params);
                 }
                 List<DocumentsDto> documents = new();
                 List<DocumentsDetallDto> detalles = new();
@@ -127,25 +127,55 @@ namespace backaramis.Services
                 data.DocumentsDto = documents;
                 data.DocumentsDetallDto = detalles;
                 if (data != null)
+                {
                     return data;
+                }
 
                 return null!;
             }
             catch (Exception ex)
             {
                 if (ex.Message == "Sequence contains no elements")
+                {
                     return null!;
+                }
 
                 throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
         }
-        public void InsertDocument(string Operador)
+        public async Task<Documento> InsertDocument(string Operador)
         {
             try
             {
-                List<SqlParameter> Params = new();
-                Params.Add(new SqlParameter("@operador", Operador));
-                _storeProcedure.ExecuteNonQuery("DocumentInsert", Params);
+                SystemOption? systemOption = await _context.SystemOptions.FirstOrDefaultAsync();
+                if (systemOption == null)
+                {
+                    throw new Exception("Verifique, las tablas no están listas");
+                }
+                systemOption.P += 1; //numero de recibo
+                _context.SystemOptions.Attach(systemOption);
+
+                Cliente? mostrador = await _context.Clientes.FirstAsync(x => x.Cuit == 0);
+
+                Documento documento = new()
+                {
+                    Tipo = 1,
+                    Pos = 0,
+                    Numero = systemOption.P,
+                    Cliente = mostrador.Id,
+                    Fecha = DateTime.Now,
+                    CodAut = String.Empty,
+                    Vence = DateTime.Now,
+                    Razon = mostrador.Nombre ?? String.Empty,
+                    Observaciones = String.Empty,
+                    Operador = Operador,
+                    Creado = DateTime.Now
+                };
+
+                await _context.Documentos.AddAsync(documento);
+                await _context.SaveChangesAsync();
+
+                return documento;
             }
             catch (Exception ex)
             {
@@ -156,6 +186,15 @@ namespace backaramis.Services
         {
             try
             {
+                Documento? document = _context.Documentos.FirstOrDefault(x => x.Id == Id);
+                if (document == null)
+                {
+                    throw new Exception("Verifique, las tablas no están listas");
+                }
+                if (_context.Clientes.FirstOrDefaultAsync(x => x.Id == document.Cliente).Result!.Cuit == 0)
+                {
+                    throw new Exception("EL MOSTRADOR NO PUEDE TENER ORDENES DE SERVICIO");
+                }
                 DocumentoTipo? tipo = _context.DocumentoTipos.FirstOrDefault(x => x.Letra == "O");
                 SystemOption? numero = _context.SystemOptions.FirstOrDefault();
                 if (numero == null)
@@ -167,11 +206,7 @@ namespace backaramis.Services
                 {
                     throw new Exception("Verifique, las tablas no están listas");
                 }
-                Documento? document = _context.Documentos.FirstOrDefault(x => x.Id == Id);
-                if (document == null)
-                {
-                    throw new Exception("Verifique, las tablas no están listas");
-                }
+
                 document.Tipo = tipo.Id;
                 document.Fecha = DateTime.Now;
                 document.Creado = DateTime.Now;
@@ -196,6 +231,10 @@ namespace backaramis.Services
                 {
                     throw new Exception("Verifique, las tablas no están listas");
                 }
+                if (document.Tipo == 2 && persona.Cuit == 0)
+                {
+                    throw new Exception("Las ódenes de servicio, no se pueden generar al MOSTRADOR");
+                }
 
                 document.Cliente = cliente;
                 document.Razon = persona.Nombre;
@@ -209,13 +248,13 @@ namespace backaramis.Services
         }
         public FileStreamResult Report(int id)
         {
-            var documento = GetDocuments(id);
+            Documents? documento = GetDocuments(id);
             if (documento == null)
             {
                 return null!;
             }
-            var stream = new MemoryStream();
-            var QrJsonModel = new QrJson
+            MemoryStream? stream = new();
+            QrJson? QrJsonModel = new()
             {
                 CodAut = documento.DocumentsDto!.First().CodTipo > 3 ? documento.DocumentsDto!.First().CodAut! : "0",
                 Ctz = 1,
@@ -226,18 +265,13 @@ namespace backaramis.Services
                 NroCmp = documento.DocumentsDto!.First().NumeroInt,
                 NroDocRec = documento.DocumentsDto!.First().Cuit,
                 PtoVenta = documento.DocumentsDto!.First().PosInt,
-                TipoCmp = documento.DocumentsDto!.First().CodTipo == 3 ? 88
-                : documento.DocumentsDto!.First().CodTipo == 4 ? 1
-                : documento.DocumentsDto!.First().CodTipo == 5 ? 6
-                : documento.DocumentsDto!.First().CodTipo == 6 ? 3
-                : documento.DocumentsDto!.First().CodTipo == 7 ? 8
-                : 0, //de acuerdo al tipo de comprobante
+                TipoCmp = documento.DocumentsDto!.First().CodTipo == 3 ? 88 : documento.DocumentsDto!.First().CodTipo == 4 ? 1 : documento.DocumentsDto!.First().CodTipo == 5 ? 6 : documento.DocumentsDto!.First().CodTipo == 6 ? 3 : documento.DocumentsDto!.First().CodTipo == 7 ? 8 : 0,
                 TipoCodAut = "E",
                 TipoDocRec = documento.DocumentsDto!.First().Cuit == 0 ? 99 : 86,
                 Ver = 1
             };
-            var QrString = JsonSerializer.Serialize(QrJsonModel);
-            var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(QrString);
+            string? QrString = JsonSerializer.Serialize(QrJsonModel);
+            byte[]? plainTextBytes = System.Text.Encoding.UTF8.GetBytes(QrString);
             QRCodeGenerator qrGenerator = new();
             QRCodeData qrCodeData = qrGenerator.CreateQrCode("https://www.afip.gob.ar/fe/qr/?p=" + Convert.ToBase64String(plainTextBytes), QRCodeGenerator.ECCLevel.Q);
             BitmapByteQRCode qrCode = new(qrCodeData);
@@ -404,7 +438,7 @@ namespace backaramis.Services
                                      .Background("#9ca4df")
                                    .Text("Sub Total");
 
-                                    foreach (var c in documento.DocumentsDetallDto!)
+                                    foreach (DocumentsDetallDto? c in documento.DocumentsDetallDto!)
                                     {
                                         table.Cell().Padding(0).DefaultTextStyle(x => x.FontSize(8)).DefaultTextStyle(x => x.NormalWeight()).AlignCenter().Text(c.Codigo);
                                         table.Cell().Padding(0).DefaultTextStyle(x => x.FontSize(8)).DefaultTextStyle(x => x.NormalWeight()).AlignLeft().Text(c.Detalle);
@@ -498,8 +532,8 @@ namespace backaramis.Services
 
                 #region Get Login Ticket
                 //Get Login Ticket
-                var loginClient = new LoginCmsClient { IsProdEnvironment = _context.SystemOptions.First().Produccion };
-                var ticket = await loginClient.LoginCmsAsync("wsfe",
+                LoginCmsClient? loginClient = new() { IsProdEnvironment = _context.SystemOptions.First().Produccion };
+                WsaaTicket? ticket = await loginClient.LoginCmsAsync("wsfe",
                                                              "Certificados/certificado.p12",
                                                              "1234",
                                                              true);
@@ -507,58 +541,30 @@ namespace backaramis.Services
 
                 #region wsfeClient
 
-                var wsfeClient = new WsfeClient
+                WsfeClient? wsfeClient = new()
                 {
                     IsProdEnvironment = _context.SystemOptions.First().Produccion,
                     Cuit = long.Parse(_context.SystemOptions.First().Cuit.Replace("-", "")),
                     Sign = ticket.Sign,
                     Token = ticket.Token
                 };
-                var compNumber = wsfeClient.FECompUltimoAutorizadoAsync(_context.SystemOptions.First().PtoVenta, documento.TipoComprobante)
+                int compNumber = wsfeClient.FECompUltimoAutorizadoAsync(_context.SystemOptions.First().PtoVenta, documento.TipoComprobante)
                     .Result.Body.FECompUltimoAutorizadoResult.CbteNro + 1;
 
                 #endregion
 
                 #region Build WSFE Request
                 //Build WSFE FECAERequest          
-                var feCaeReq = new FECAERequest //CAE REQUEST
+                FECAERequest? feCaeReq = new()
                 {
-                    FeCabReq = new FECAECabRequest //CABECECERA DEL CAE REQUEST
-                    {
-                        CantReg = 1,
-                        CbteTipo = documento.TipoComprobante,
-                        PtoVta = _context.SystemOptions.First().PtoVenta
-                    },
-                    FeDetReq = new List<FECAEDetRequest> //LISTADO DETALLE DEL CAE REQUEST
-                {
-                  new FECAEDetRequest
-                    {
-                    CbteDesde = compNumber,
-                    CbteHasta = compNumber,
-                    CbteFch = DateTime.Now.ToString("yyyyMMdd"),
-                    Concepto = 3,
-                    DocNro =  documento.DocumentoCliente,
-                    DocTipo = documento.TipoDocumento,
-                    FchVtoPago = DateTime.Now.ToString("yyyyMMdd"),
-                    ImpNeto =  (double)documento.Neto,
-                    ImpTotal = (double)documento.TotalComprobante,
-                    ImpIVA= (double)documento.IvaTotal,
-                    ImpOpEx=(double)documento.Exento,
-                    ImpTrib= (double)documento.Internos,
-                    FchServDesde = DateTime.Now.ToString("yyyyMMdd"),
-                    FchServHasta =DateTime.Now.ToString("yyyyMMdd"),
-                    Tributos = documento.Tributo,
-                    MonCotiz = 1,
-                    MonId = "PES",
-                    Iva = documento.Alicuotas
-                }
-                }
+                    FeCabReq = new FECAECabRequest { CantReg = 1, CbteTipo = documento.TipoComprobante, PtoVta = _context.SystemOptions.First().PtoVenta },
+                    FeDetReq = new List<FECAEDetRequest> { new FECAEDetRequest { CbteDesde = compNumber, CbteHasta = compNumber, CbteFch = DateTime.Now.ToString("yyyyMMdd"), Concepto = 3, DocNro = documento.DocumentoCliente, DocTipo = documento.TipoDocumento, FchVtoPago = DateTime.Now.ToString("yyyyMMdd"), ImpNeto = (double)documento.Neto, ImpTotal = (double)documento.TotalComprobante, ImpIVA = (double)documento.IvaTotal, ImpOpEx = (double)documento.Exento, ImpTrib = (double)documento.Internos, FchServDesde = DateTime.Now.ToString("yyyyMMdd"), FchServHasta = DateTime.Now.ToString("yyyyMMdd"), Tributos = documento.Tributo, MonCotiz = 1, MonId = "PES", Iva = documento.Alicuotas } }
                 };
 
                 #endregion
 
                 //Call WSFE FECAESolicitar
-                var compResult = await wsfeClient.FECAESolicitarAsync(feCaeReq);
+                FECAESolicitarResponse? compResult = await wsfeClient.FECAESolicitarAsync(feCaeReq);
                 return compResult;
             }
             catch (Exception ex)
@@ -567,19 +573,24 @@ namespace backaramis.Services
                 return null!;
             }
         }
-        public async Task<long> FacturaRemito(Documento documento)
+        public async Task<long> FacturaRemito(long id)
         {
+            Documento? documento = _context.Documentos
+                           .Where(d => d.Id == id)
+                           .Include(dd => dd.DocumentoDetalles)
+                           .FirstOrDefault();
+
             List<SqlParameter> parameters = new()
             {
-                new SqlParameter("@id", documento.Id)
+                new SqlParameter("@id", documento!.Id)
             };
-            var totales = _storeProcedure.SpWhithDataSetPure("DocumentoGet", parameters);
+            DataSet? totales = _storeProcedure.SpWhithDataSetPure("DocumentoGet", parameters);
 
 
             DocumentoFiscal documentoFiscal = new();
-            documentoFiscal.TipoComprobante = _context.Clientes.FirstAsync(x => x.Id == documento.Cliente).Result.Responsabilidad == "INSCRIPTO" || _context.Clientes.FirstAsync(x => x.Id == documento.Cliente).Result.Responsabilidad == "MONOTRIBUTO" ? 1 : 6;
-            documentoFiscal.TipoDocumento = _context.Clientes.FirstAsync(x => x.Id == documento.Cliente).Result.Cuit == 0 ? 99 : 80;
-            documentoFiscal.DocumentoCliente = _context.Clientes.FirstAsync(x => x.Id == documento.Cliente).Result.Cuit;
+            documentoFiscal.TipoComprobante = _context.Clientes.FirstAsync(x => x.Id == documento!.Cliente).Result.Responsabilidad == "INSCRIPTO" || _context.Clientes.FirstAsync(x => x.Id == documento!.Cliente).Result.Responsabilidad == "MONOTRIBUTO" ? 1 : 6;
+            documentoFiscal.TipoDocumento = _context.Clientes.FirstAsync(x => x.Id == documento!.Cliente).Result.Cuit == 0 ? 99 : 80;
+            documentoFiscal.DocumentoCliente = _context.Clientes.FirstAsync(x => x.Id == documento!.Cliente).Result.Cuit;
             documentoFiscal.NoGravado = 0;
             foreach (DataRow row in totales.Tables[0].Rows)
             {
@@ -596,11 +607,20 @@ namespace backaramis.Services
 
             List<AlicIva> alicIvas = new();
             if (documentoFiscal.Exento > 0)
+            {
                 alicIvas.Add(new() { Id = 3, BaseImp = (double)documentoFiscal.Exento, Importe = 0 });
+            }
+
             if (documentoFiscal.Iva10 > 0)
+            {
                 alicIvas.Add(new() { Id = 4, BaseImp = (double)documentoFiscal.Neto10, Importe = (double)documentoFiscal.Iva10 });
+            }
+
             if (documentoFiscal.Iva21 > 0)
+            {
                 alicIvas.Add(new() { Id = 5, BaseImp = (double)documentoFiscal.Neto21, Importe = (double)documentoFiscal.Iva21 });
+            }
+
             documentoFiscal.Alicuotas = alicIvas;
             if (documentoFiscal.Internos > 0)
             {
@@ -609,27 +629,33 @@ namespace backaramis.Services
                 documentoFiscal.Tributo = tributo;
             }
 
-            var cae = await GetCae(documentoFiscal);
+            FECAESolicitarResponse? cae = await GetCae(documentoFiscal);
             if (cae != null)
             {
                 if (cae.Body.FECAESolicitarResult.FeCabResp.Resultado == "A")
                 {
-                    var documentoDetalles = from d in _context.DocumentoDetalles
-                                            where d.Documento == documento.Id
-                                            select d;
-                    if (documentoDetalles.Any())
-                        await documentoDetalles.ForEachAsync(d => d.Facturado = d.Cantidad);
-                    _context.DocumentoDetalles.AttachRange(documentoDetalles);
+                    //var documentoDetalles = from d in _context.DocumentoDetalles
+                    //                        where d.Documento == documento.Id
+                    //                        select d;
+                    if (documento.DocumentoDetalles.Any())
+                    {
+                        foreach (DocumentoDetalle? det in documento.DocumentoDetalles)
+                        {
+                            det.Facturado = det.Cantidad;
+                        }
+                    }
+
+                    _context.Update(documento);
 
                     //Creamos el nuevo documento para la factura
 
                     Documento factura = new();
                     List<DocumentoDetalle> detallesFiscales = new();
-                    foreach (var d in documentoDetalles)
+                    foreach (DocumentoDetalle? d in documento.DocumentoDetalles)
                     {
                         detallesFiscales.Add(new DocumentoDetalle
                         {
-                            Facturado = d.Facturado,
+                            Facturado = d.Cantidad,
                             Codigo = d.Codigo,
                             Detalle = d.Detalle,
                             Cantidad = d.Cantidad,
@@ -648,14 +674,14 @@ namespace backaramis.Services
                     factura.Fecha = DateTime.Now;
                     factura.Vence = DateTime.Now;
                     factura.Razon = documento.Razon;
-                    factura.Observaciones = "Remito " + (_context.SystemOptions.First().X + 1).ToString();
+                    factura.Observaciones = "Remito " + documento.Numero.ToString();
                     factura.Operador = documento.Operador;
                     factura.Creado = DateTime.Now;
                     factura.Estado = documento.Estado;
                     factura.Pago = documento.Pago;
                     factura.CodAut = cae.Body.FECAESolicitarResult.FeDetResp.First().CAE;
                     factura.DocumentoDetalles = detallesFiscales;
-                    _context.Documentos.Add(factura);
+                    Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<Documento>? data = _context.Documentos.Add(factura);
                 }
             }
             else
@@ -663,9 +689,17 @@ namespace backaramis.Services
                 documento.Observaciones = "Pendiente de Facturación";
                 _context.Update(documento);
             }
-           var result = await _context.SaveChangesAsync();
-           return result;
+            int result = await _context.SaveChangesAsync();
+            return result;
 
+        }
+        public List<long> GetDocumentsByRecibo(int recibo)
+        {
+            IQueryable<long>? documentos = from listado in _context.DocumentoRecibos
+                                           where listado.Recibo == recibo
+                                           select listado.Documento;
+
+            return documentos.ToList();
         }
     }
 }

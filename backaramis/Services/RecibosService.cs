@@ -1,30 +1,33 @@
 ﻿using AutoMapper;
+using backaramis.Helpers;
 using backaramis.Interfaces;
 using backaramis.Models;
-using backaramis.Modelsdtos.Documents;
 using backaramis.Modelsdtos.Recibos;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using System.Data;
-using System.Net.Http.Headers;
-using System.Text.Json;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using backaramis.Helpers; 
+using System.Data;
+using System.Net.Http.Headers;
+using System.Text.Json;
 
 namespace backaramis.Services
 {
 
-    public class RecibosService : IRecibosService 
+    public class RecibosService : IRecibosService
     {
+        private readonly IStoreProcedure _storeProcedure;
         private readonly AramisContext _context;
-        private readonly IMapper _mapper; 
-        public RecibosService(AramisContext context, IMapper mapper)
+        private readonly IMapper _mapper;
+        public RecibosService(AramisContext context,
+                              IStoreProcedure storeProcedure,
+                              IMapper mapper)
         {
+            _storeProcedure= storeProcedure;
             _context = context;
-            _mapper = mapper; 
+            _mapper = mapper;
         }
         public async Task<PaymentIntentResponeDto> CreatePaymentIntent(PaymentIntentDto PaymentIntent, int id)
         {
@@ -49,7 +52,7 @@ namespace backaramis.Services
                     {
                         try
                         {
-                            var result = await response.Content.ReadFromJsonAsync<PaymentIntentResponeDto>();
+                            PaymentIntentResponeDto? result = await response.Content.ReadFromJsonAsync<PaymentIntentResponeDto>();
                             return result!;
 
                         }
@@ -135,7 +138,7 @@ namespace backaramis.Services
                     {
                         try
                         {
-                            var result = await response.Content.ReadFromJsonAsync<CancelIntentPayDto>();
+                            CancelIntentPayDto? result = await response.Content.ReadFromJsonAsync<CancelIntentPayDto>();
                             return result!;
                         }
                         catch (NotSupportedException) // When content type is not valid
@@ -176,7 +179,7 @@ namespace backaramis.Services
                     {
                         try
                         {
-                            var result = await response.Content.ReadFromJsonAsync<StateIntentPayDto>();
+                            StateIntentPayDto? result = await response.Content.ReadFromJsonAsync<StateIntentPayDto>();
                             return result!;
 
                         }
@@ -202,7 +205,7 @@ namespace backaramis.Services
         public async Task<int> Insert(ReciboInsertDto ReciboInsert)
         {
             try
-            { 
+            {
                 Recibo? Recibo = _mapper.Map<ReciboInsertDto, Recibo>(ReciboInsert);
 
                 SystemOption? systemOption = await _context.SystemOptions.FirstOrDefaultAsync();
@@ -212,8 +215,7 @@ namespace backaramis.Services
                 }
                 systemOption.R += 1; //numero de recibo
                 Recibo.Id = systemOption.R;
-                _context.SystemOptions.Attach(systemOption);
-
+                
                 decimal Total = Recibo.ReciboDetalles.Sum(x => x.Monto);
                 decimal TotalDocumento = 0;
                 decimal PagoAplicado = 0;
@@ -253,7 +255,7 @@ namespace backaramis.Services
                         _context.DocumentoRecibos.Add(documentoRecibo);
                     }
                     _context.Documentos.Update(docu);
-                }
+                } 
 
                 //Manejo del Documento
                 if (ReciboInsert.CodTipo != null)
@@ -261,12 +263,20 @@ namespace backaramis.Services
                     Documento? documento = await _context.Documentos.FirstAsync(x => x.Id == ReciboInsert.Documents.First());
                     if (documento != null)
                     {
+                        List<SqlParameter> parameters = new()
+                        {
+                            new SqlParameter("@documento", documento!.Id)
+                        }; 
+                        systemOption.X += 1;
                         documento.Estado = _context.DocumentoEstados.FirstOrDefaultAsync(d => d.Detalle == "ENTREGADO").Result!.Id;
                         //si viene de un presupuesto lo transforma en lo que sea
                         if (documento.Tipo == _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "PRESUPUESTO")!.Id)
-                        {
+                        { 
                             documento.Tipo = _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "REMITO")!.Id;
                             documento.Fecha = DateTime.Now;
+                            documento.Numero = systemOption.X;
+                            documento.Razon = _context.Clientes.FirstOrDefault(x=>x.Id==documento.Cliente)!.Nombre;
+                            _storeProcedure.SpWhithDataSetPure("DocumentDescuentaStock", parameters);
                         }
                         //si viene de una orden la modifica y crea uno nuevo
 
@@ -278,8 +288,12 @@ namespace backaramis.Services
                             _context.DocumentoOrdens.Add(pasoAremito);
                             documento.Tipo = _context.DocumentoTipos.FirstOrDefault(x => x.Detalle == "REMITO")!.Id;
                             documento.Fecha = DateTime.Now;
-                        } 
-
+                            documento.Numero = systemOption.X;
+                            documento.Razon = _context.Clientes.FirstOrDefault(x => x.Id == documento.Cliente)!.Nombre;
+                            _storeProcedure.SpWhithDataSetPure("DocumentDescuentaStock", parameters);
+                        }
+                      
+                        _context.SystemOptions.Attach(systemOption);
                         _context.Documentos.Update(documento!);
                     }
                 }
@@ -297,31 +311,31 @@ namespace backaramis.Services
         {
             try
             {
-                var recibo = _context.Recibos
+                Recibo? recibo = _context.Recibos
                              .Where(r => r.Id == id)
                              .Include(rd => rd.ReciboDetalles)
                              .FirstOrDefault();
 
-                var total = 0.0m;
-                foreach (var rd in recibo!.ReciboDetalles)
+                decimal total = 0.0m;
+                foreach (ReciboDetalle? rd in recibo!.ReciboDetalles)
                 {
                     total += rd.Monto;
                 }
 
                 string letras = ExtensionMethods.NumeroLetras(total);
 
-                var cliente = _context.Clientes
+                Cliente? cliente = _context.Clientes
                               .Where(c => c.Id == recibo!.Cliente)
                              .FirstOrDefault();
 
-                var empresa = _context.SystemOptions.FirstOrDefault();
+                SystemOption? empresa = _context.SystemOptions.FirstOrDefault();
 
                 if (recibo == null)
                 {
                     return null!;
                 }
 
-                var stream = new MemoryStream();
+                MemoryStream? stream = new();
 
                 Document.Create(container =>
                 {
@@ -570,7 +584,7 @@ namespace backaramis.Services
                                      .Background("#9ca4df")
                                      .AlignRight()
                                    .Text("");
-                                    foreach (var c in recibo.ReciboDetalles!)
+                                    foreach (ReciboDetalle? c in recibo.ReciboDetalles!)
                                     {
                                         table.Cell().Padding(2).DefaultTextStyle(x => x.FontSize(10)).DefaultTextStyle(x => x.SemiBold()).AlignLeft().Text(c.Tipo + "   (" + c.Codigo + ")");
                                         table.Cell().Padding(2).DefaultTextStyle(x => x.FontSize(12)).DefaultTextStyle(x => x.SemiBold()).AlignRight().Text("$ " + c.Monto);
@@ -594,7 +608,7 @@ namespace backaramis.Services
                                      .Background("#9ca4df")
                                      .AlignRight()
                                    .Text("");
-                                    foreach (var c in recibo.ReciboDetalles!)
+                                    foreach (ReciboDetalle? c in recibo.ReciboDetalles!)
                                     {
                                         table.Cell().Padding(2).DefaultTextStyle(x => x.FontSize(10)).DefaultTextStyle(x => x.SemiBold()).AlignLeft().Text(c.Tipo + "   (" + c.Codigo + ")");
                                         table.Cell().Padding(2).DefaultTextStyle(x => x.FontSize(12)).DefaultTextStyle(x => x.SemiBold()).AlignRight().Text("$ " + c.Monto);
@@ -689,7 +703,7 @@ namespace backaramis.Services
             {
                 throw new Exception(ex.InnerException is not null ? ex.InnerException.Message : ex.Message);
             }
-        } 
+        }
     }
 }
 

@@ -1,6 +1,4 @@
-﻿using Microsoft.NET.StringTools;
-using System.Security.Claims;
-using System;
+﻿using System.Security.Claims;
 
 namespace backaramis.Helpers
 {
@@ -39,7 +37,7 @@ namespace backaramis.Helpers
         public static string NumeroLetras(decimal numero)
         {
             string ImpLetra;
-            string lcRetorno = string.Empty; 
+            string lcRetorno = string.Empty;
             string lcCadena;
             int lnEntero = (int)numero;
             int lnTerna = 1;
@@ -83,21 +81,21 @@ namespace backaramis.Helpers
                            lcCadena) :
 
                            lnDecenas.Equals(2) ? (
-                           lnUnidades.Equals(0) ? "Veinte " + lcCadena : "Veinti" + lcCadena ):
+                           lnUnidades.Equals(0) ? "Veinte " + lcCadena : "Veinti" + lcCadena) :
                            lnDecenas.Equals(3) ? (
-                           lnUnidades.Equals(0) ? "Treinta " + lcCadena : "Treinta y " + lcCadena ):
+                           lnUnidades.Equals(0) ? "Treinta " + lcCadena : "Treinta y " + lcCadena) :
                            lnDecenas.Equals(4) ? (
-                           lnUnidades.Equals(0) ? "Cuarenta " + lcCadena : "Cuarenta y " + lcCadena ):
+                           lnUnidades.Equals(0) ? "Cuarenta " + lcCadena : "Cuarenta y " + lcCadena) :
                            lnDecenas.Equals(5) ? (
-                           lnUnidades.Equals(0) ? "Cincuenta " + lcCadena : "Cincuenta y " + lcCadena ):
+                           lnUnidades.Equals(0) ? "Cincuenta " + lcCadena : "Cincuenta y " + lcCadena) :
                            lnDecenas.Equals(6) ? (
-                           lnUnidades.Equals(0) ? "Sesenta " + lcCadena : "Sesenta y " + lcCadena ):
+                           lnUnidades.Equals(0) ? "Sesenta " + lcCadena : "Sesenta y " + lcCadena) :
                            lnDecenas.Equals(7) ? (
-                           lnUnidades.Equals(0) ? "Setenta " + lcCadena : "Setenta y " + lcCadena ):
+                           lnUnidades.Equals(0) ? "Setenta " + lcCadena : "Setenta y " + lcCadena) :
                            lnDecenas.Equals(8) ? (
-                           lnUnidades.Equals(0) ? "Ochenta " + lcCadena : "Ochenta y " + lcCadena ):
+                           lnUnidades.Equals(0) ? "Ochenta " + lcCadena : "Ochenta y " + lcCadena) :
                            lnDecenas.Equals(9) ? (
-                           lnUnidades.Equals(0) ? "Noventa " + lcCadena : "Noventa y " + lcCadena ):
+                           lnUnidades.Equals(0) ? "Noventa " + lcCadena : "Noventa y " + lcCadena) :
                            lcCadena;
 
                 lcCadena = lnCentenas.Equals(1) && lnTerna.Equals(3) ? "Cien " + lcCadena :
@@ -123,13 +121,19 @@ namespace backaramis.Helpers
                 lnTerna++;
             }
 
-            if (lnTerna.Equals(1)) lcRetorno = "Cero";
+            if (lnTerna.Equals(1))
+            {
+                lcRetorno = "Cero";
+            }
 
             string _fraccion = "00" + lnFraccion.ToString().TrimStart();
             ImpLetra = string.Concat(lcRetorno.TrimEnd(), " con ", _fraccion.AsSpan((_fraccion.Length) - 2, 2), "/100");
-            if (ImpLetra.StartsWith("Un") && ImpLetra.Contains("Millones")) ImpLetra = ImpLetra.Replace("Millones", "Millón");
+            if (ImpLetra.StartsWith("Un") && ImpLetra.Contains("Millones"))
+            {
+                ImpLetra = ImpLetra.Replace("Millones", "Millón");
+            }
 
             return ImpLetra;
-        } 
+        }
     }
 }

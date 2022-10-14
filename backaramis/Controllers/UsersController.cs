@@ -209,7 +209,7 @@ namespace backaramis.Controllers
                 User? user = _mapper.Map<User>(model);
                 if (string.IsNullOrWhiteSpace(model.Password) || model.Password == "undefined")
                 {
-                    _userService.Update(user,null!);
+                    _userService.Update(user, null!);
                 }
                 else
                 {

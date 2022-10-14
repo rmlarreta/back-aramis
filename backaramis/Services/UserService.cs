@@ -191,7 +191,7 @@ namespace backaramis.Services
 
         public User ChangePassword(string username, string password, string npassword)
         {
-            User? user = Authenticate(username, password);           
+            User? user = Authenticate(username, password);
 
             if (!string.IsNullOrWhiteSpace(npassword))
             {
